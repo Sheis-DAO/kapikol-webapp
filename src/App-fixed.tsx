@@ -106,7 +106,7 @@ function WalletConnection() {
   return (
     <div className="flex items-center gap-2">
       {publicKey && balance !== null && (
-        <div className="hidden sm:flex items-center gap-1 bg-white rounded px-2 py-1 border border-gray-200">
+        <div className="hidden sm:flex items-center gap-1 bg-white rounded px-2 py-1 border border-gray-200 h-8">
           <div className="w-4 h-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
             <span className="text-white text-xs font-bold">S</span>
           </div>
@@ -116,7 +116,16 @@ function WalletConnection() {
           </div>
         </div>
       )}
-      <WalletMultiButton className="!bg-blue-600 !hover:bg-blue-700 !text-white !font-medium !py-1 !px-3 !rounded !text-sm !transition-colors !duration-200" />
+      <WalletMultiButton 
+        className="!bg-blue-600 !hover:bg-blue-700 !text-white !font-medium !rounded !text-sm !transition-colors !duration-200"
+        style={{
+          height: '32px',
+          padding: '4px 12px',
+          fontSize: '14px',
+          minHeight: '32px',
+          lineHeight: '24px'
+        }}
+      />
     </div>
   );
 }
@@ -450,13 +459,360 @@ function MyStakesSection() {
   );
 }
 
-type ActiveSection = 'rankings' | 'launches' | 'stakes' | 'verification';
+// Mock API function to simulate social media search
+async function searchSocialMedia(handle: string) {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Mock data for demonstration
+  const mockResults = {
+    instagram: {
+      found: handle.includes('fashion') || handle.includes('beauty') || handle.includes('lifestyle'),
+      data: {
+        username: handle,
+        displayName: handle.includes('fashion') ? 'Fashion Forward' : handle.includes('beauty') ? 'Beauty Insider' : 'Lifestyle Guru',
+        followers: Math.floor(Math.random() * 100000) + 10000,
+        following: Math.floor(Math.random() * 1000) + 100,
+        profilePicture: '/creator_1.JPG',
+        verified: Math.random() > 0.5,
+        platform: 'Instagram'
+      }
+    },
+    tiktok: {
+      found: handle.includes('dance') || handle.includes('music') || handle.includes('viral'),
+      data: {
+        username: handle,
+        displayName: handle.includes('dance') ? 'Dance Queen' : handle.includes('music') ? 'Music Maker' : 'Viral Creator',
+        followers: Math.floor(Math.random() * 500000) + 50000,
+        following: Math.floor(Math.random() * 500) + 50,
+        profilePicture: '/creator_2.jpg',
+        verified: Math.random() > 0.6,
+        platform: 'TikTok'
+      }
+    },
+    youtube: {
+      found: handle.includes('tech') || handle.includes('review') || handle.includes('tutorial'),
+      data: {
+        username: handle,
+        displayName: handle.includes('tech') ? 'Tech Reviewer' : handle.includes('review') ? 'Product Reviews' : 'Tutorial Master',
+        followers: Math.floor(Math.random() * 200000) + 5000,
+        following: Math.floor(Math.random() * 300) + 50,
+        profilePicture: '/creator_3.jpg',
+        verified: Math.random() > 0.4,
+        platform: 'YouTube'
+      }
+    },
+    twitter: {
+      found: handle.includes('crypto') || handle.includes('defi') || handle.includes('blockchain'),
+      data: {
+        username: handle,
+        displayName: handle.includes('crypto') ? 'Crypto Analyst' : handle.includes('defi') ? 'DeFi Expert' : 'Blockchain Guru',
+        followers: Math.floor(Math.random() * 50000) + 5000,
+        following: Math.floor(Math.random() * 2000) + 200,
+        profilePicture: '/creator_4.jpg',
+        verified: Math.random() > 0.3,
+        platform: 'Twitter'
+      }
+    }
+  };
+  
+  return mockResults;
+}
+
+function SocialMediaSearch({ onInitiateStake }: { onInitiateStake: (influencer: any) => void }) {
+  const [searchHandle, setSearchHandle] = useState('');
+  const [searchResults, setSearchResults] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedInfluencer, setSelectedInfluencer] = useState<any>(null);
+
+  const handleSearch = async () => {
+    if (!searchHandle.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const results = await searchSocialMedia(searchHandle);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleInitiate = (influencerData: any) => {
+    setSelectedInfluencer(influencerData);
+    onInitiateStake(influencerData);
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 mb-6">
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">🔍 Find Your Influencer</h3>
+        <p className="text-sm text-gray-600">Search for influencers across multiple social media platforms and initiate staking</p>
+      </div>
+
+      {/* Search Input */}
+      <div className="flex gap-2 mb-4">
+        <div className="flex-1">
+          <input
+            type="text"
+            placeholder="Enter social media handle (e.g., @username)"
+            value={searchHandle}
+            onChange={(e) => setSearchHandle(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <button
+          onClick={handleSearch}
+          disabled={isSearching || !searchHandle.trim()}
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+        >
+          {isSearching ? 'Searching...' : 'Search'}
+        </button>
+      </div>
+
+      {/* Search Results */}
+      {searchResults && (
+        <div className="space-y-3">
+          <h4 className="font-medium text-gray-900">Search Results:</h4>
+          <div className="grid gap-3">
+            {Object.entries(searchResults).map(([platform, result]: [string, any]) => {
+              if (!result.found) return null;
+              
+              const { data } = result;
+              return (
+                <div key={platform} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={data.profilePicture}
+                        alt={data.displayName}
+                        className="w-12 h-12 rounded-full object-cover border border-gray-300"
+                        style={{ objectPosition: 'center 25%' }}
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h5 className="font-medium text-gray-900">{data.displayName}</h5>
+                          {data.verified && <span className="text-blue-500 text-sm">✓</span>}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            platform === 'instagram' ? 'bg-pink-100 text-pink-800' :
+                            platform === 'tiktok' ? 'bg-gray-100 text-gray-800' :
+                            platform === 'youtube' ? 'bg-red-100 text-red-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {data.platform}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">{data.username}</p>
+                        <div className="flex gap-4 text-xs text-gray-500 mt-1">
+                          <span>{data.followers.toLocaleString()} followers</span>
+                          <span>{data.following.toLocaleString()} following</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleInitiate(data)}
+                      className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                    >
+                      Initiate Stake
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {searchResults && Object.values(searchResults).every((r: any) => !r.found) && (
+        <div className="text-center py-4">
+          <p className="text-gray-600">No influencers found with handle "{searchHandle}"</p>
+          <p className="text-sm text-gray-500 mt-1">Try searching for handles containing: fashion, beauty, lifestyle, dance, music, tech, review, crypto, defi</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InitiateStake({ influencer, onBack }: { influencer: any; onBack: () => void }) {
+  const { publicKey, connected } = useWallet();
+  const [stakeAmount, setStakeAmount] = useState('');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [isStaking, setIsStaking] = useState(false);
+  const solPrice = 150; // Mock SOL price
+
+  const handleStake = async () => {
+    if (!connected || !stakeAmount || parseFloat(stakeAmount) <= 0) return;
+    
+    setIsStaking(true);
+    // Simulate transaction delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Here would be actual Solana transaction logic
+    alert(`Successfully staked ${stakeAmount} SOL on ${influencer.displayName}!`);
+    setIsStaking(false);
+    onBack();
+  };
+
+  const usdValue = stakeAmount ? (parseFloat(stakeAmount) * solPrice).toFixed(2) : '0.00';
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={onBack}
+          className="text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          ← Back to Search
+        </button>
+        <h2 className="text-2xl font-bold text-gray-900">Initiate Stake</h2>
+      </div>
+
+      {/* Influencer Info Card */}
+      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+        <div className="flex items-center gap-4 mb-4">
+          <img
+            src={influencer.profilePicture}
+            alt={influencer.displayName}
+            className="w-16 h-16 rounded-full object-cover border border-gray-300"
+            style={{ objectPosition: 'center 25%' }}
+          />
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-xl font-semibold text-gray-900">{influencer.displayName}</h3>
+              {influencer.verified && <span className="text-blue-500">✓</span>}
+            </div>
+            <p className="text-gray-600">{influencer.username}</p>
+            <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                influencer.platform === 'Instagram' ? 'bg-pink-100 text-pink-800' :
+                influencer.platform === 'TikTok' ? 'bg-gray-100 text-gray-800' :
+                influencer.platform === 'YouTube' ? 'bg-red-100 text-red-800' :
+                'bg-blue-100 text-blue-800'
+              }`}>
+                {influencer.platform}
+              </span>
+              <span>{influencer.followers.toLocaleString()} followers</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Staking Form */}
+      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+        <h4 className="text-lg font-semibold text-gray-900 mb-4">Stake Details</h4>
+        
+        {!connected ? (
+          <div className="text-center py-8">
+            <p className="text-gray-600 mb-4">Connect your wallet to stake on this influencer</p>
+            <WalletMultiButton className="!bg-blue-600 !hover:bg-blue-700 !text-white !font-medium !py-2 !px-6 !rounded-lg !transition-colors" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Stake Amount Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Stake Amount (SOL)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  placeholder="Enter SOL amount"
+                  value={stakeAmount}
+                  onChange={(e) => setStakeAmount(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-16"
+                />
+                <span className="absolute right-3 top-2 text-gray-500 text-sm">SOL</span>
+              </div>
+              {stakeAmount && (
+                <p className="text-sm text-gray-600 mt-1">
+                  ≈ ${usdValue} USD (at $150/SOL)
+                </p>
+              )}
+            </div>
+
+            {/* Support Message */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Support Message (Optional)
+              </label>
+              <textarea
+                placeholder="Leave a message of support for this influencer..."
+                value={supportMessage}
+                onChange={(e) => setSupportMessage(e.target.value)}
+                maxLength={500}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Share why you believe in this creator</span>
+                <span>{supportMessage.length}/500</span>
+              </div>
+            </div>
+
+            {/* Stake Summary */}
+            {stakeAmount && parseFloat(stakeAmount) > 0 && (
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <h5 className="font-medium text-blue-900 mb-2">Stake Summary</h5>
+                <div className="space-y-1 text-sm text-blue-800">
+                  <div className="flex justify-between">
+                    <span>Stake Amount:</span>
+                    <span>{stakeAmount} SOL</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>USD Value:</span>
+                    <span>${usdValue}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Potential Token Allocation:</span>
+                    <span>{(parseFloat(stakeAmount) * 1000).toFixed(0)} tokens*</span>
+                  </div>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  *Token allocation calculated when influencer launches (1000 tokens per SOL staked)
+                </p>
+              </div>
+            )}
+
+            {/* Stake Button */}
+            <button
+              onClick={handleStake}
+              disabled={isStaking || !stakeAmount || parseFloat(stakeAmount) <= 0}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+            >
+              {isStaking ? 'Processing Stake...' : `Stake ${stakeAmount || '0'} SOL`}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type ActiveSection = 'rankings' | 'launches' | 'stakes' | 'verification' | 'initiate';
 
 function App() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('rankings');
+  const [selectedInfluencer, setSelectedInfluencer] = useState<any>(null);
 
   const handleNavigate = (section: ActiveSection) => {
     setActiveSection(section);
+    if (section !== 'initiate') {
+      setSelectedInfluencer(null);
+    }
+  };
+
+  const handleInitiateStake = (influencer: any) => {
+    setSelectedInfluencer(influencer);
+    setActiveSection('initiate');
+  };
+
+  const handleBackToSearch = () => {
+    setSelectedInfluencer(null);
+    setActiveSection('rankings');
   };
 
   const renderContent = () => {
@@ -506,6 +862,17 @@ function App() {
                 Start Token Claim Process
               </button>
             </div>
+          </div>
+        );
+      case 'initiate':
+        return selectedInfluencer ? (
+          <InitiateStake 
+            influencer={selectedInfluencer} 
+            onBack={handleBackToSearch} 
+          />
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-600">No influencer selected</p>
           </div>
         );
       default:
@@ -590,6 +957,11 @@ function App() {
             🎯 Claim
           </button>
         </div>
+
+        {/* Search Component - Only show on rankings page */}
+        {activeSection === 'rankings' && (
+          <SocialMediaSearch onInitiateStake={handleInitiateStake} />
+        )}
 
         {/* Main Content */}
         {renderContent()}
