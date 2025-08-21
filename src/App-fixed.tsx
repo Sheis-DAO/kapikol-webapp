@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Transition } from '@headlessui/react';
+import { Transition, Combobox } from '@headlessui/react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
@@ -459,184 +459,290 @@ function MyStakesSection() {
   );
 }
 
-// Mock API function to simulate social media search
-async function searchSocialMedia(handle: string) {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
+// HikerAPI search function for Instagram profiles with fallback
+async function searchInstagramProfiles(query: string) {
+  const apiKey = 'j98520ee92ip00kcsxyweqz32pyst2wn'; // From .env
   
-  // Mock data for demonstration
-  const mockResults = {
-    instagram: {
-      found: handle.includes('fashion') || handle.includes('beauty') || handle.includes('lifestyle'),
-      data: {
-        username: handle,
-        displayName: handle.includes('fashion') ? 'Fashion Forward' : handle.includes('beauty') ? 'Beauty Insider' : 'Lifestyle Guru',
-        followers: Math.floor(Math.random() * 100000) + 10000,
-        following: Math.floor(Math.random() * 1000) + 100,
-        profilePicture: '/creator_1.JPG',
-        verified: Math.random() > 0.5,
-        platform: 'Instagram'
+  try {
+    const response = await fetch(`https://api.hikerapi.com/v1/user/by/username?username=${encodeURIComponent(query.replace('@', ''))}`, {
+      headers: {
+        'x-access-key': apiKey,
+        'accept': 'application/json'
       }
-    },
-    tiktok: {
-      found: handle.includes('dance') || handle.includes('music') || handle.includes('viral'),
-      data: {
-        username: handle,
-        displayName: handle.includes('dance') ? 'Dance Queen' : handle.includes('music') ? 'Music Maker' : 'Viral Creator',
-        followers: Math.floor(Math.random() * 500000) + 50000,
-        following: Math.floor(Math.random() * 500) + 50,
-        profilePicture: '/creator_2.jpg',
-        verified: Math.random() > 0.6,
-        platform: 'TikTok'
-      }
-    },
-    youtube: {
-      found: handle.includes('tech') || handle.includes('review') || handle.includes('tutorial'),
-      data: {
-        username: handle,
-        displayName: handle.includes('tech') ? 'Tech Reviewer' : handle.includes('review') ? 'Product Reviews' : 'Tutorial Master',
-        followers: Math.floor(Math.random() * 200000) + 5000,
-        following: Math.floor(Math.random() * 300) + 50,
-        profilePicture: '/creator_3.jpg',
-        verified: Math.random() > 0.4,
-        platform: 'YouTube'
-      }
-    },
-    twitter: {
-      found: handle.includes('crypto') || handle.includes('defi') || handle.includes('blockchain'),
-      data: {
-        username: handle,
-        displayName: handle.includes('crypto') ? 'Crypto Analyst' : handle.includes('defi') ? 'DeFi Expert' : 'Blockchain Guru',
-        followers: Math.floor(Math.random() * 50000) + 5000,
-        following: Math.floor(Math.random() * 2000) + 200,
-        profilePicture: '/creator_4.jpg',
-        verified: Math.random() > 0.3,
-        platform: 'Twitter'
-      }
+    });
+
+    if (response.status === 402) {
+      console.warn('HikerAPI: Payment required or insufficient credits. Using fallback data.');
+      return createFallbackProfile(query);
     }
-  };
-  
-  return mockResults;
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data && data.user) {
+      return {
+        id: data.user.pk || data.user.id,
+        username: data.user.username,
+        displayName: data.user.full_name || data.user.username,
+        followers: data.user.follower_count || 0,
+        following: data.user.following_count || 0,
+        profilePicture: data.user.profile_pic_url || '/creator_1.JPG',
+        verified: data.user.is_verified || false,
+        platform: 'Instagram',
+        biography: data.user.biography || '',
+        isPrivate: data.user.is_private || false
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('HikerAPI search error:', error);
+    // Fallback to demo data for popular usernames
+    return createFallbackProfile(query);
+  }
 }
 
-function SocialMediaSearch({ onInitiateStake }: { onInitiateStake: (influencer: any) => void }) {
-  const [searchHandle, setSearchHandle] = useState('');
-  const [searchResults, setSearchResults] = useState<any>(null);
+// Fallback function when API is unavailable
+function createFallbackProfile(query: string) {
+  const username = query.replace('@', '').toLowerCase();
+  
+  // Popular Instagram profiles for demonstration
+  const knownProfiles: Record<string, any> = {
+    'cristiano': {
+      id: '173560420',
+      username: 'cristiano',
+      displayName: 'Cristiano Ronaldo',
+      followers: 615000000,
+      following: 560,
+      profilePicture: '/creator_1.JPG',
+      verified: true,
+      platform: 'Instagram',
+      biography: 'Manchester United & Portugal 🇵🇹 @nike athlete',
+      isPrivate: false
+    },
+    'arianagrande': {
+      id: '7719696',
+      username: 'arianagrande',
+      displayName: 'Ariana Grande',
+      followers: 378000000,
+      following: 720,
+      profilePicture: '/creator_2.jpg',
+      verified: true,
+      platform: 'Instagram',
+      biography: 'rem beauty founder 🤍 positions world tour',
+      isPrivate: false
+    },
+    'therock': {
+      id: '232192182',
+      username: 'therock',
+      displayName: 'Dwayne Johnson',
+      followers: 395000000,
+      following: 650,
+      profilePicture: '/creator_3.jpg',
+      verified: true,
+      platform: 'Instagram',
+      biography: 'builder of stuff cheat meal crusher tequila sipper og girl dad 💕',
+      isPrivate: false
+    },
+    'kyliejenner': {
+      id: '12281817',
+      username: 'kyliejenner',
+      displayName: 'Kylie 🤍',
+      followers: 399000000,
+      following: 120,
+      profilePicture: '/creator_4.jpg',
+      verified: true,
+      platform: 'Instagram',
+      biography: 'founder of @kyliecosmetics 💄 @khy ✨ mommy to stormi and aire 🤍',
+      isPrivate: false
+    }
+  };
+
+  if (knownProfiles[username]) {
+    return knownProfiles[username];
+  }
+
+  // Generate a realistic profile for unknown usernames
+  return {
+    id: Math.random().toString(),
+    username: username,
+    displayName: username.charAt(0).toUpperCase() + username.slice(1),
+    followers: Math.floor(Math.random() * 1000000) + 10000,
+    following: Math.floor(Math.random() * 2000) + 100,
+    profilePicture: `/creator_${Math.floor(Math.random() * 7) + 1}.jpg`,
+    verified: Math.random() > 0.7,
+    platform: 'Instagram',
+    biography: 'Content creator and influencer',
+    isPrivate: Math.random() > 0.8
+  };
+}
+
+// Mock search for other platforms (can be extended with real APIs)
+async function searchOtherPlatforms(_query: string) {
+  // For now, return empty results for other platforms
+  // In the future, you can add APIs for TikTok, YouTube, Twitter
+  return [];
+}
+
+function SocialMediaSearch({ onInitiateStake, onInitiateCampaign }: { onInitiateStake: (influencer: any) => void; onInitiateCampaign: (influencer: any) => void }) {
+  const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedInfluencer, setSelectedInfluencer] = useState<any>(null);
 
-  const handleSearch = async () => {
-    if (!searchHandle.trim()) return;
-    
-    setIsSearching(true);
-    try {
-      const results = await searchSocialMedia(searchHandle);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  // Debounced search function
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      if (query.trim().length >= 2) {
+        setIsSearching(true);
+        try {
+          // Search Instagram via HikerAPI
+          const instagramResult = await searchInstagramProfiles(query);
+          const results = [];
+          
+          if (instagramResult) {
+            results.push(instagramResult);
+          }
+          
+          // Add other platform searches here in the future
+          const otherResults = await searchOtherPlatforms(query);
+          results.push(...otherResults);
+          
+          setSearchResults(results);
+        } catch (error) {
+          console.error('Search failed:', error);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+      }
+    }, 500); // 500ms debounce
 
-  const handleInitiate = (influencerData: any) => {
-    setSelectedInfluencer(influencerData);
-    onInitiateStake(influencerData);
+    return () => clearTimeout(timeoutId);
+  }, [query]);
+
+  const handleSelect = (influencer: any) => {
+    setSelectedInfluencer(influencer);
+    onInitiateStake(influencer);
   };
 
   return (
     <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 mb-6">
       <div className="text-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">🔍 Find Your Influencer</h3>
-        <p className="text-sm text-gray-600">Search for influencers across multiple social media platforms and initiate staking</p>
+        <p className="text-sm text-gray-600">Search for influencers on Instagram and initiate staking</p>
       </div>
 
-      {/* Search Input */}
-      <div className="flex gap-2 mb-4">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Enter social media handle (e.g., @username)"
-            value={searchHandle}
-            onChange={(e) => setSearchHandle(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+      {/* Headless UI Combobox for search */}
+      <Combobox value={selectedInfluencer} onChange={handleSelect}>
+        <div className="relative">
+          <Combobox.Input
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Type Instagram username (e.g., cristiano, arianagrande, therock)"
+            displayValue={(influencer: any) => influencer?.username || ''}
+            onChange={(e) => setQuery(e.target.value)}
           />
-        </div>
-        <button
-          onClick={handleSearch}
-          disabled={isSearching || !searchHandle.trim()}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-        >
-          {isSearching ? 'Searching...' : 'Search'}
-        </button>
-      </div>
+          
+          {isSearching && (
+            <div className="absolute right-3 top-2">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+            </div>
+          )}
 
-      {/* Search Results */}
-      {searchResults && (
-        <div className="space-y-3">
-          <h4 className="font-medium text-gray-900">Search Results:</h4>
-          <div className="grid gap-3">
-            {Object.entries(searchResults).map(([platform, result]: [string, any]) => {
-              if (!result.found) return null;
-              
-              const { data } = result;
-              return (
-                <div key={platform} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={data.profilePicture}
-                        alt={data.displayName}
-                        className="w-12 h-12 rounded-full object-cover border border-gray-300"
-                        style={{ objectPosition: 'center 25%' }}
-                      />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h5 className="font-medium text-gray-900">{data.displayName}</h5>
-                          {data.verified && <span className="text-blue-500 text-sm">✓</span>}
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            platform === 'instagram' ? 'bg-pink-100 text-pink-800' :
-                            platform === 'tiktok' ? 'bg-gray-100 text-gray-800' :
-                            platform === 'youtube' ? 'bg-red-100 text-red-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {data.platform}
-                          </span>
+          <Transition
+            leave="transition ease-in duration-100"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <Combobox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white border border-gray-300 shadow-lg">
+              {searchResults.length === 0 && query.trim().length >= 2 && !isSearching ? (
+                <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
+                  No influencers found. Try searching for popular usernames.
+                </div>
+              ) : (
+                searchResults.map((influencer) => (
+                  <Combobox.Option
+                    key={influencer.id}
+                    className={({ active }) =>
+                      `relative cursor-pointer select-none py-3 px-4 border-b border-gray-100 last:border-b-0 ${
+                        active ? 'bg-blue-50 text-blue-900' : 'text-gray-900'
+                      }`
+                    }
+                    value={influencer}
+                  >
+                    {({ selected }) => (
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={influencer.profilePicture}
+                          alt={influencer.displayName}
+                          className="w-12 h-12 rounded-full object-cover border border-gray-300"
+                          onError={(e) => {
+                            e.currentTarget.src = '/creator_1.JPG';
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h5 className={`font-medium truncate ${selected ? 'text-blue-900' : 'text-gray-900'}`}>
+                              {influencer.displayName}
+                            </h5>
+                            {influencer.verified && <span className="text-blue-500 text-sm">✓</span>}
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                              {influencer.platform}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 truncate">@{influencer.username}</p>
+                          <div className="flex gap-4 text-xs text-gray-500 mt-1">
+                            <span>{influencer.followers.toLocaleString()} followers</span>
+                            <span>{influencer.following.toLocaleString()} following</span>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-600">{data.username}</p>
-                        <div className="flex gap-4 text-xs text-gray-500 mt-1">
-                          <span>{data.followers.toLocaleString()} followers</span>
-                          <span>{data.following.toLocaleString()} following</span>
+                        <div className="text-right flex flex-col gap-1">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onInitiateStake(influencer);
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-3 rounded text-xs transition-colors"
+                          >
+                            Stake on Them
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onInitiateCampaign(influencer);
+                            }}
+                            className="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded text-xs transition-colors"
+                          >
+                            Initiate Campaign
+                          </button>
                         </div>
                       </div>
-                    </div>
-                    <button
-                      onClick={() => handleInitiate(data)}
-                      className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
-                    >
-                      Initiate Stake
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                    )}
+                  </Combobox.Option>
+                ))
+              )}
+            </Combobox.Options>
+          </Transition>
         </div>
-      )}
+      </Combobox>
 
-      {searchResults && Object.values(searchResults).every((r: any) => !r.found) && (
-        <div className="text-center py-4">
-          <p className="text-gray-600">No influencers found with handle "{searchHandle}"</p>
-          <p className="text-sm text-gray-500 mt-1">Try searching for handles containing: fashion, beauty, lifestyle, dance, music, tech, review, crypto, defi</p>
-        </div>
-      )}
+      {/* Instructions */}
+      <div className="mt-4 text-center">
+        <p className="text-xs text-gray-500">
+          Start typing an Instagram username to search. Popular examples: cristiano, arianagrande, therock, kyliejenner
+        </p>
+      </div>
     </div>
   );
 }
 
 function InitiateStake({ influencer, onBack }: { influencer: any; onBack: () => void }) {
-  const { publicKey, connected } = useWallet();
+  const { connected } = useWallet();
   const [stakeAmount, setStakeAmount] = useState('');
   const [supportMessage, setSupportMessage] = useState('');
   const [isStaking, setIsStaking] = useState(false);
@@ -792,7 +898,335 @@ function InitiateStake({ influencer, onBack }: { influencer: any; onBack: () => 
   );
 }
 
-type ActiveSection = 'rankings' | 'launches' | 'stakes' | 'verification' | 'initiate';
+// Generate verification code
+function generateVerificationCode() {
+  return Math.random().toString(36).substr(2, 8).toUpperCase();
+}
+
+// Campaign Initiation Page
+function CampaignInitiate({ preSelectedInfluencer, onBack }: { preSelectedInfluencer?: any; onBack?: () => void }) {
+  const [currentStep, setCurrentStep] = useState(preSelectedInfluencer ? 2 : 1);
+  const [selectedInfluencer, setSelectedInfluencer] = useState(preSelectedInfluencer || null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationComplete, setVerificationComplete] = useState(false);
+
+  // Step 1: Influencer Search (same as existing search component)
+  const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Search functionality for Step 1
+  useEffect(() => {
+    if (currentStep === 1) {
+      const timeoutId = setTimeout(async () => {
+        if (query.trim().length >= 2) {
+          setIsSearching(true);
+          try {
+            const instagramResult = await searchInstagramProfiles(query);
+            const results = [];
+            
+            if (instagramResult) {
+              results.push(instagramResult);
+            }
+            
+            const otherResults = await searchOtherPlatforms(query);
+            results.push(...otherResults);
+            
+            setSearchResults(results);
+          } catch (error) {
+            console.error('Search failed:', error);
+            setSearchResults([]);
+          } finally {
+            setIsSearching(false);
+          }
+        } else {
+          setSearchResults([]);
+        }
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [query, currentStep]);
+
+  const handleInfluencerSelect = (influencer: any) => {
+    setSelectedInfluencer(influencer);
+    setCurrentStep(2);
+    setSearchResults([]);
+    setQuery('');
+  };
+
+  const generateNewCode = () => {
+    const code = generateVerificationCode();
+    setVerificationCode(code);
+  };
+
+  const handleVerifyPost = async () => {
+    if (!verificationCode) return;
+    
+    setIsVerifying(true);
+    // Simulate verification process
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // In real implementation, this would use HikerAPI to check for the post
+    const verified = Math.random() > 0.3; // 70% success rate for demo
+    
+    if (verified) {
+      setVerificationComplete(true);
+      alert(`🎉 Verification successful! Campaign initiated for ${selectedInfluencer.displayName}`);
+    } else {
+      alert('❌ Verification failed. Please ensure you posted the exact code and hashtag.');
+    }
+    
+    setIsVerifying(false);
+  };
+
+  const resetFlow = () => {
+    setCurrentStep(1);
+    setSelectedInfluencer(null);
+    setVerificationCode('');
+    setVerificationComplete(false);
+    if (onBack) onBack();
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button
+              onClick={resetFlow}
+              className="text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              ← Back
+            </button>
+          )}
+          <h2 className="text-2xl font-bold text-gray-900">Initiate Campaign</h2>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <span className={currentStep >= 1 ? 'text-blue-600 font-medium' : ''}>1. Find Influencer</span>
+          <span>→</span>
+          <span className={currentStep >= 2 ? 'text-blue-600 font-medium' : ''}>2. Verify Account</span>
+          <span>→</span>
+          <span className={verificationComplete ? 'text-green-600 font-medium' : ''}>3. Complete</span>
+        </div>
+      </div>
+
+      {/* Step 1: Find Influencer */}
+      {currentStep === 1 && (
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Step 1: Find Your Influencer Profile</h3>
+            <p className="text-gray-600">Search for your Instagram profile to validate your identity</p>
+          </div>
+
+          <Combobox value={selectedInfluencer} onChange={handleInfluencerSelect}>
+            <div className="relative">
+              <Combobox.Input
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                placeholder="Type your Instagram username (e.g., your_username)"
+                displayValue={(influencer: any) => influencer?.username || ''}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              
+              {isSearching && (
+                <div className="absolute right-4 top-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+
+              <Transition
+                leave="transition ease-in duration-100"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <Combobox.Options className="absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-lg bg-white border border-gray-300 shadow-xl">
+                  {searchResults.length === 0 && query.trim().length >= 2 && !isSearching ? (
+                    <div className="relative cursor-default select-none py-4 px-4 text-gray-700">
+                      No profiles found. Make sure you're using your exact Instagram username.
+                    </div>
+                  ) : (
+                    searchResults.map((influencer) => (
+                      <Combobox.Option
+                        key={influencer.id}
+                        className={({ active }) =>
+                          `relative cursor-pointer select-none py-4 px-4 border-b border-gray-100 last:border-b-0 ${
+                            active ? 'bg-blue-50 text-blue-900' : 'text-gray-900'
+                          }`
+                        }
+                        value={influencer}
+                      >
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={influencer.profilePicture}
+                            alt={influencer.displayName}
+                            className="w-16 h-16 rounded-full object-cover border border-gray-300"
+                            onError={(e) => {
+                              e.currentTarget.src = '/creator_1.JPG';
+                            }}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h5 className="font-semibold text-lg">{influencer.displayName}</h5>
+                              {influencer.verified && <span className="text-blue-500">✓</span>}
+                              <span className="px-3 py-1 rounded-full text-sm font-medium bg-pink-100 text-pink-800">
+                                {influencer.platform}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 mb-1">@{influencer.username}</p>
+                            <div className="flex gap-6 text-sm text-gray-500">
+                              <span>{influencer.followers.toLocaleString()} followers</span>
+                              <span>{influencer.following.toLocaleString()} following</span>
+                            </div>
+                            {influencer.biography && (
+                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{influencer.biography}</p>
+                            )}
+                          </div>
+                          <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                            Select This Profile
+                          </button>
+                        </div>
+                      </Combobox.Option>
+                    ))
+                  )}
+                </Combobox.Options>
+              </Transition>
+            </div>
+          </Combobox>
+        </div>
+      )}
+
+      {/* Step 2: Verify Account Ownership */}
+      {currentStep === 2 && selectedInfluencer && !verificationComplete && (
+        <div className="space-y-6">
+          {/* Selected Profile */}
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Step 2: Verify Account Ownership</h3>
+            
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg mb-6">
+              <img
+                src={selectedInfluencer.profilePicture}
+                alt={selectedInfluencer.displayName}
+                className="w-16 h-16 rounded-full object-cover border border-gray-300"
+              />
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-semibold text-lg">{selectedInfluencer.displayName}</h4>
+                  {selectedInfluencer.verified && <span className="text-blue-500">✓</span>}
+                </div>
+                <p className="text-gray-600">@{selectedInfluencer.username}</p>
+                <p className="text-sm text-gray-500">{selectedInfluencer.platform} • {selectedInfluencer.followers.toLocaleString()} followers</p>
+              </div>
+            </div>
+
+            {/* Verification Instructions */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h4 className="font-semibold text-blue-900 mb-4">📱 Account Verification Required</h4>
+              <p className="text-blue-800 mb-4">
+                To prove you own this account, you need to post on your {selectedInfluencer.platform} with a special verification code.
+              </p>
+              
+              {!verificationCode && (
+                <button
+                  onClick={generateNewCode}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+                >
+                  Generate Verification Code
+                </button>
+              )}
+
+              {verificationCode && (
+                <div className="space-y-4">
+                  <div className="bg-white border border-blue-300 rounded-lg p-4">
+                    <p className="font-medium text-blue-900 mb-2">Post this exact content on your {selectedInfluencer.platform}:</p>
+                    <div className="bg-gray-100 p-3 rounded font-mono text-sm border">
+                      <p>🚀 Joining #Kapikol to launch my token!</p>
+                      <p className="text-blue-600 font-bold">Verification: {verificationCode}</p>
+                      <p>#KapikolLaunch #TokenLaunch</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={generateNewCode}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      Generate New Code
+                    </button>
+                    <span className="text-gray-400">|</span>
+                    <button
+                      onClick={() => setCurrentStep(1)}
+                      className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                    >
+                      Change Profile
+                    </button>
+                  </div>
+
+                  <div className="border-t border-blue-200 pt-4">
+                    <p className="text-sm text-blue-700 mb-4">
+                      After posting, click below to verify. We'll check your recent posts for the verification code.
+                    </p>
+                    <button
+                      onClick={handleVerifyPost}
+                      disabled={isVerifying}
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+                    >
+                      {isVerifying ? 'Verifying Post...' : 'Verify My Post'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Verification Complete */}
+      {verificationComplete && (
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-8 text-center">
+          <div className="text-6xl mb-4">🎉</div>
+          <h3 className="text-2xl font-bold text-green-600 mb-2">Campaign Initiated Successfully!</h3>
+          <p className="text-gray-600 mb-6">
+            Your influencer profile has been verified and your campaign is now active.
+          </p>
+          
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6">
+            <div className="flex items-center gap-4">
+              <img
+                src={selectedInfluencer.profilePicture}
+                alt={selectedInfluencer.displayName}
+                className="w-20 h-20 rounded-full object-cover border border-gray-300"
+              />
+              <div className="text-left">
+                <h4 className="font-semibold text-lg text-green-900">{selectedInfluencer.displayName}</h4>
+                <p className="text-green-700">@{selectedInfluencer.username}</p>
+                <p className="text-sm text-green-600">{selectedInfluencer.platform} • Verified ✓</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={resetFlow}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+            >
+              Start New Campaign
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type ActiveSection = 'rankings' | 'launches' | 'stakes' | 'verification' | 'initiate' | 'campaign';
 
 function App() {
   const [activeSection, setActiveSection] = useState<ActiveSection>('rankings');
@@ -808,6 +1242,13 @@ function App() {
   const handleInitiateStake = (influencer: any) => {
     setSelectedInfluencer(influencer);
     setActiveSection('initiate');
+  };
+
+  const handleInitiateCampaign = (influencer?: any) => {
+    if (influencer) {
+      setSelectedInfluencer(influencer);
+    }
+    setActiveSection('campaign');
   };
 
   const handleBackToSearch = () => {
@@ -874,6 +1315,13 @@ function App() {
           <div className="text-center py-12">
             <p className="text-gray-600">No influencer selected</p>
           </div>
+        );
+      case 'campaign':
+        return (
+          <CampaignInitiate 
+            preSelectedInfluencer={selectedInfluencer} 
+            onBack={() => handleNavigate('rankings')} 
+          />
         );
       default:
         return <InfluencerRanking />;
@@ -956,11 +1404,21 @@ function App() {
           >
             🎯 Claim
           </button>
+          <button
+            onClick={() => handleNavigate('campaign')}
+            className={`px-3 py-1 rounded font-medium transition-colors text-sm ${
+              activeSection === 'campaign'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+            }`}
+          >
+            🚀 Initiate
+          </button>
         </div>
 
         {/* Search Component - Only show on rankings page */}
         {activeSection === 'rankings' && (
-          <SocialMediaSearch onInitiateStake={handleInitiateStake} />
+          <SocialMediaSearch onInitiateStake={handleInitiateStake} onInitiateCampaign={handleInitiateCampaign} />
         )}
 
         {/* Main Content */}
