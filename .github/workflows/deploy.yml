@@ -1,13 +1,13 @@
-name: Deploy to Vercel
+name: Build and Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     
     steps:
@@ -26,10 +26,5 @@ jobs:
     - name: Build application
       run: npm run build
       
-    - name: Deploy to Vercel
-      uses: vercel/action@v1
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.ORG_ID }}
-        vercel-project-id: ${{ secrets.PROJECT_ID }}
-        vercel-args: '--prod'
+    - name: Build success
+      run: echo "✅ Build completed successfully! Vercel will auto-deploy from this commit."

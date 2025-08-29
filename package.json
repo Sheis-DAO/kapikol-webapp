@@ -8,7 +8,15 @@
     "build": "vite build",
     "build-check": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "anchor:build": "anchor build",
+    "anchor:test": "anchor test",
+    "test:local": "anchor test --provider.cluster localnet",
+    "test:devnet": "anchor test --provider.cluster devnet",
+    "test:fast": "TEST_EPOCH_DURATION=120 anchor test --provider.cluster localnet",
+    "deploy:localnet": "anchor deploy --provider.cluster localnet",
+    "deploy:devnet": "anchor deploy --provider.cluster devnet",
+    "start-validator": "solana-test-validator --reset --ledger test-ledger --bpf-program KAPikoLaunchStakingProgram11111111111111111 target/deploy/kapikol_protocol.so"
   },
   "dependencies": {
     "@headlessui/react": "^2.0.0",
@@ -20,6 +28,10 @@
     "@solana/wallet-adapter-wallets": "^0.19.37",
     "@solana/web3.js": "^1.98.4",
     "@types/node": "^24.3.0",
+    "@coral-xyz/borsh": "^0.29.0",
+    "@solana/spl-token": "^0.4.6",
+    "bn.js": "^5.2.0",
+    "bs58": "^5.0.0",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "react": "^19.1.1",
@@ -37,6 +49,13 @@
     "globals": "^16.3.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "@coral-xyz/anchor": "^0.29.0",
+    "@types/bn.js": "^5.1.0",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^9.1.0",
+    "chai": "^4.3.0",
+    "mocha": "^10.0.0",
+    "ts-mocha": "^10.0.0"
   }
 }

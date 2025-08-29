@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kapikol SocialFi Protocol - Smart Contract Architecture v2.0</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
+            margin-top: 40px;
+        }
+        h3 {
+            color: #2c3e50;
+            margin-top: 30px;
+        }
+        h4 {
+            color: #34495e;
+            margin-top: 25px;
+        }
+        pre {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+        }
+        ul, ol {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        strong {
+            color: #2c3e50;
+        }
+        .toc {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .toc ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .mermaid-placeholder {
+            background-color: #e3f2fd;
+            border: 2px dashed #1976d2;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            color: #1976d2;
+            font-style: italic;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #ecf0f1;
+            margin: 40px 0;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Kapikol SocialFi Protocol - Smart Contract Architecture v2.0</h1>
+
+<div class="toc">
+<h2>Table of Contents</h2>
+<ol>
+    <li><a href="#executive-summary">Executive Summary</a></li>
+    <li><a href="#core-protocol-overview">Core Protocol Overview</a></li>
+    <li><a href="#smart-contract-architecture">Smart Contract Architecture</a></li>
+    <li><a href="#staking--unstaking-mechanisms">Staking & Unstaking Mechanisms</a></li>
+    <li><a href="#token-launch--distribution">Token Launch & Distribution</a></li>
+    <li><a href="#security-framework">Security Framework</a></li>
+    <li><a href="#governance--emergency-controls">Governance & Emergency Controls</a></li>
+    <li><a href="#technical-implementation">Technical Implementation</a></li>
+    <li><a href="#economic-model">Economic Model</a></li>
+    <li><a href="#risk-assessment--mitigation">Risk Assessment & Mitigation</a></li>
+</ol>
+</div>
+
+<hr>
+
+<h2 id="executive-summary">Executive Summary</h2>
+
+<p>The Kapikol SocialFi Protocol is a Solana-based decentralized platform enabling community-driven staking on social media influencers with automated token launches for top-ranked creators. This architecture implements a sophisticated multi-signature security model, emergency governance controls, and sustainable tokenomics designed for long-term ecosystem growth.</p>
+
+<h3>Key Features</h3>
+<ul>
+    <li><strong>Indefinite Staking</strong>: Stakes remain active until manual withdrawal or token launch</li>
+    <li><strong>Automated Rankings</strong>: On-chain ranking system with 2-week epoch cycles</li>
+    <li><strong>Dual Withdrawal System</strong>: Pre-launch (1% fee) and post-launch (2% fee) unstaking</li>
+    <li><strong>Multi-Signature Security</strong>: Triple-layer security with platform, treasury, and developer controls</li>
+    <li><strong>Emergency Governance</strong>: Content moderation and forced refund capabilities</li>
+    <li><strong>Community Fund Integration</strong>: Unclaimed allocations benefit women creators through Sheis-DAO</li>
+</ul>
+
+<hr>
+
+<h2 id="core-protocol-overview">Core Protocol Overview</h2>
+
+<h3>Protocol Flow</h3>
+
+<div class="mermaid-placeholder">
+    [Mermaid Diagram: Protocol Flow showing user staking, ranking calculations, token launches, and distribution mechanisms]
+    <br><br>
+    Key Flow Points:
+    <br>• User Stakes SOL on Influencer → Pre-Launch Staking (1% Platform Fee)
+    <br>• Bi-weekly Ranking Calculation → Top Influencer gets Automated Token Launch
+    <br>• Token Distribution: 30% to Stakers, 30% to Influencer, 30% to Market Liquidity, 10% to Developers
+    <br>• Influencer Verification (3 months) → 30% to Influencer OR 30% to Sheis-DAO Treasury/Stakers
+</div>
+
+<h3>Epoch System</h3>
+<ul>
+    <li><strong>Duration</strong>: 2 weeks (336 hours)</li>
+    <li><strong>Ranking Calculation</strong>: Automated at epoch end</li>
+    <li><strong>Token Launch</strong>: Only top-ranked influencer per epoch</li>
+    <li><strong>Continuous Competition</strong>: All stakers compete across epochs until withdrawal or launch</li>
+</ul>
+
+<hr>
+
+<h2 id="smart-contract-architecture">Smart Contract Architecture</h2>
+
+<h3>Program Structure (Anchor Framework)</h3>
+
+<h4>1. Master Protocol Program</h4>
+<pre><code>// Core protocol state and epoch management
+pub struct GlobalProtocolState {
+    pub version: u8,
+    pub authority: Pubkey,              // Platform multisig
+    pub current_epoch: u64,
+    pub epoch_start_time: i64,
+    pub total_influencers: u32,
+    pub total_staked_sol: u64,
+    pub platform_treasury: Pubkey,
+    pub emergency_mode: bool,           // Emergency shutdown flag
+    pub paused: bool,                   // Operational pause flag
+}</code></pre>
+
+<h4>2. Staking Management Program</h4>
+<pre><code>// Individual influencer vault
+pub struct InfluencerVault {
+    pub influencer_id: [u8; 32],       // Unique identifier
+    pub social_handle: String,          // Instagram/social handle
+    pub verification_status: VerificationStatus,
+    pub total_staked: u64,
+    pub unique_stakers: u32,
+    pub creation_epoch: u64,
+    pub last_activity: i64,
+    pub content_flag: ContentFlag,      // Moderation status
+    pub launch_status: LaunchStatus,
+}
+
+// Individual stake position
+pub struct StakePosition {
+    pub staker: Pubkey,
+    pub influencer_vault: Pubkey,
+    pub gross_amount: u64,              // Original staked amount
+    pub net_amount: u64,                // Amount after fees
+    pub stake_timestamp: i64,
+    pub epoch_staked: u64,
+    pub position_status: PositionStatus,
+}</code></pre>
+
+<h4>3. Token Launch Program</h4>
+<pre><code>// Token launch configuration
+pub struct TokenLaunchConfig {
+    pub influencer_vault: Pubkey,
+    pub token_mint: Pubkey,
+    pub total_supply: u64,              // Fixed at 1,000,000,000 tokens
+    pub launch_timestamp: i64,
+    pub verification_deadline: i64,     // 3 months from launch
+    pub distribution_complete: bool,
+}
+
+// Vesting schedule for stakers
+pub struct VestingSchedule {
+    pub beneficiary: Pubkey,
+    pub total_allocation: u64,          // 30% of tokens proportional to stake
+    pub daily_release_amount: u64,      // Linear over 3 years
+    pub claimed_amount: u64,
+    pub sol_vesting_amount: u64,        // SOL to be returned over 3 years
+    pub sol_claimed: u64,
+    pub start_time: i64,
+    pub last_claim_time: i64,
+}
+
+// Linear vesting utility structure
+pub struct LinearVesting {
+    pub total_amount: u64,
+    pub start_time: i64,
+    pub duration: i64,                  // Vesting duration in seconds
+    pub cliff_time: i64,                // Optional cliff period
+}</code></pre>
+
+<h4>4. Treasury Management Program</h4>
+<pre><code>// Platform treasury account
+pub struct PlatformTreasury {
+    pub authority: Pubkey,              // 3-of-5 multisig
+    pub total_fees_collected: u64,
+    pub staking_fees: u64,              // 1% pre-launch
+    pub unstaking_fees: u64,            // 1% pre-launch, 2% post-launch
+    pub operational_expenses: u64,
+    pub revenue_sharing: u64,           // To Sheis-DAO
+}
+
+// Sheis-DAO community treasury
+pub struct SheisDAOTreasury {
+    pub authority: Pubkey,              // Sheis-DAO multisig
+    pub unclaimed_tokens: u64,          // From unverified influencers (30%)
+    pub platform_revenue_share: u64,   // Revenue sharing from platform
+    pub grants_distributed: u64,
+    pub active_programs: u32,
+}
+
+// Developer vesting account
+pub struct DeveloperVesting {
+    pub authority: Pubkey,              // Capital/Developer account
+    pub total_allocation: u64,          // 10% of tokens from each launch
+    pub vesting_schedule: LinearVesting, // Linear vesting over time
+    pub claimed_amount: u64,
+    pub last_claim_time: i64,
+}</code></pre>
+
+<h3>Enumerations & Status Types</h3>
+
+<pre><code>#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+pub enum VerificationStatus {
+    Unverified,
+    Pending,
+    Verified,
+    Rejected,
+    Expired,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+pub enum PositionStatus {
+    Active,              // Normal staking state
+    PreLaunchUnstaking,  // Initiated unstaking before launch
+    PostLaunch,          // Token launched, entering vesting
+    PostLaunchUnstaking, // Initiated unstaking after launch
+    Completed,           // Fully withdrawn
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+pub enum ContentFlag {
+    Clean,               // No issues
+    UnderReview,         // Manual review in progress
+    Flagged,             // Content violation detected
+    Banned,              // Permanently banned
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+pub enum LaunchStatus {
+    Competing,           // In ranking competition
+    Launching,           // Token launch in progress
+    Launched,            // Token successfully launched
+    Failed,              // Launch failed or cancelled
+}</code></pre>
+
+<hr>
+
+<h2 id="staking--unstaking-mechanisms">Staking & Unstaking Mechanisms</h2>
+
+<h3>Pre-Launch Staking</h3>
+<pre><code>pub fn stake_on_influencer(
+    ctx: Context&lt;StakeOnInfluencer&gt;,
+    amount: u64,
+) -&gt; Result&lt;()&gt; {
+    require!(!ctx.accounts.global_state.paused, ErrorCode::ProtocolPaused);
+    require!(amount &gt;= MIN_STAKE_AMOUNT, ErrorCode::InsufficientStakeAmount);
+    
+    // Calculate 1% platform fee
+    let platform_fee = amount
+        .checked_mul(100)
+        .unwrap()
+        .checked_div(10000)
+        .unwrap();
+    
+    let net_stake = amount.checked_sub(platform_fee).unwrap();
+    
+    // Transfer fee to platform treasury
+    transfer_to_platform_treasury(ctx, platform_fee)?;
+    
+    // Create or update stake position
+    let stake_position = &amp;mut ctx.accounts.stake_position;
+    stake_position.staker = ctx.accounts.staker.key();
+    stake_position.gross_amount = amount;
+    stake_position.net_amount = net_stake;
+    stake_position.stake_timestamp = Clock::get()?.unix_timestamp;
+    stake_position.epoch_staked = ctx.accounts.global_state.current_epoch;
+    stake_position.position_status = PositionStatus::Active;
+    
+    // Update influencer vault
+    let influencer_vault = &amp;mut ctx.accounts.influencer_vault;
+    influencer_vault.total_staked = influencer_vault.total_staked
+        .checked_add(net_stake)
+        .unwrap();
+    
+    // Update global state
+    let global_state = &amp;mut ctx.accounts.global_state;
+    global_state.total_staked_sol = global_state.total_staked_sol
+        .checked_add(net_stake)
+        .unwrap();
+    
+    emit!(StakingEvent {
+        staker: ctx.accounts.staker.key(),
+        influencer: ctx.accounts.influencer_vault.key(),
+        amount: net_stake,
+        fee: platform_fee,
+        epoch: ctx.accounts.global_state.current_epoch,
+    });
+    
+    Ok(())
+}</code></pre>
+
+<h3>Pre-Launch Unstaking (1% Fee)</h3>
+<pre><code>pub fn unstake_pre_launch(
+    ctx: Context&lt;UnstakePreLaunch&gt;,
+) -&gt; Result&lt;()&gt; {
+    require!(!ctx.accounts.global_state.emergency_mode, ErrorCode::EmergencyModeActive);
+    require!(
+        ctx.accounts.influencer_vault.launch_status == LaunchStatus::Competing,
+        ErrorCode::InvalidUnstakeState
+    );
+    
+    let stake_position = &amp;mut ctx.accounts.stake_position;
+    require!(
+        stake_position.position_status == PositionStatus::Active,
+        ErrorCode::InvalidPositionStatus
+    );
+    
+    // Calculate 1% unstaking fee
+    let unstaking_fee = stake_position.net_amount
+        .checked_mul(100)
+        .unwrap()
+        .checked_div(10000)
+        .unwrap();
+    
+    let return_amount = stake_position.net_amount
+        .checked_sub(unstaking_fee)
+        .unwrap();
+    
+    // Transfer fee to platform treasury
+    transfer_to_platform_treasury(ctx, unstaking_fee)?;
+    
+    // Return SOL to staker
+    transfer_sol_to_staker(ctx, return_amount)?;
+    
+    // Update position status
+    stake_position.position_status = PositionStatus::Completed;
+    
+    // Update influencer vault
+    let influencer_vault = &amp;mut ctx.accounts.influencer_vault;
+    influencer_vault.total_staked = influencer_vault.total_staked
+        .checked_sub(stake_position.net_amount)
+        .unwrap();
+    
+    emit!(UnstakingEvent {
+        staker: ctx.accounts.staker.key(),
+        amount_returned: return_amount,
+        fee: unstaking_fee,
+        unstake_type: UnstakeType::PreLaunch,
+    });
+    
+    Ok(())
+}</code></pre>
+
+<h3>Post-Launch Unstaking (2% Fee)</h3>
+<pre><code>pub fn unstake_post_launch(
+    ctx: Context&lt;UnstakePostLaunch&gt;,
+) -&gt; Result&lt;()&gt; {
+    require!(!ctx.accounts.global_state.emergency_mode, ErrorCode::EmergencyModeActive);
+    
+    let vesting_schedule = &amp;mut ctx.accounts.vesting_schedule;
+    require!(
+        vesting_schedule.sol_vesting_amount &gt; vesting_schedule.sol_claimed,
+        ErrorCode::NoSOLToUnstake
+    );
+    
+    let remaining_sol = vesting_schedule.sol_vesting_amount
+        .checked_sub(vesting_schedule.sol_claimed)
+        .unwrap();
+    
+    // Calculate 2% unstaking fee on remaining amount
+    let unstaking_fee = remaining_sol
+        .checked_mul(200)
+        .unwrap()
+        .checked_div(10000)
+        .unwrap();
+    
+    let return_amount = remaining_sol.checked_sub(unstaking_fee).unwrap();
+    
+    // Transfer fee to platform treasury
+    transfer_to_platform_treasury(ctx, unstaking_fee)?;
+    
+    // Return remaining SOL to staker
+    transfer_sol_to_staker(ctx, return_amount)?;
+    
+    // Mark SOL as fully claimed (token vesting continues unaffected)
+    vesting_schedule.sol_claimed = vesting_schedule.sol_vesting_amount;
+    
+    emit!(UnstakingEvent {
+        staker: ctx.accounts.staker.key(),
+        amount_returned: return_amount,
+        fee: unstaking_fee,
+        unstake_type: UnstakeType::PostLaunch,
+    });
+    
+    Ok(())
+}</code></pre>
+
+<hr>
+
+<h2 id="token-launch--distribution">Token Launch & Distribution</h2>
+
+<h3>Automated Token Launch Process</h3>
+<pre><code>pub fn execute_token_launch(
+    ctx: Context&lt;ExecuteTokenLaunch&gt;,
+) -&gt; Result&lt;()&gt; {
+    let global_state = &amp;mut ctx.accounts.global_state;
+    let influencer_vault = &amp;mut ctx.accounts.influencer_vault;
+    
+    // Verify this influencer won the current epoch
+    require!(
+        is_top_ranked_influencer(influencer_vault.key())?,
+        ErrorCode::NotTopRanked
+    );
+    
+    require!(
+        influencer_vault.launch_status == LaunchStatus::Competing,
+        ErrorCode::AlreadyLaunched
+    );
+    
+    // Create token mint
+    let token_mint = create_token_mint(ctx, TOTAL_TOKEN_SUPPLY)?;
+    
+    // Initialize token launch config
+    let launch_config = &amp;mut ctx.accounts.launch_config;
+    launch_config.influencer_vault = influencer_vault.key();
+    launch_config.token_mint = token_mint;
+    launch_config.total_supply = TOTAL_TOKEN_SUPPLY;
+    launch_config.launch_timestamp = Clock::get()?.unix_timestamp;
+    launch_config.verification_deadline = Clock::get()?.unix_timestamp + (90 * 24 * 60 * 60); // 3 months
+    
+    // Update influencer vault status
+    influencer_vault.launch_status = LaunchStatus::Launched;
+    
+    // Distribute tokens
+    distribute_tokens_to_stakers(ctx)?;      // 30% linear vesting
+    hold_tokens_for_influencer(ctx)?;        // 30% pending verification
+    provide_liquidity_to_dex(ctx)?;          // 30% market making
+    vest_tokens_to_developers(ctx)?;         // 10% to developers (linear vesting)
+    
+    // Start new epoch
+    global_state.current_epoch = global_state.current_epoch.checked_add(1).unwrap();
+    global_state.epoch_start_time = Clock::get()?.unix_timestamp;
+    
+    emit!(TokenLaunchEvent {
+        influencer: influencer_vault.key(),
+        token_mint: token_mint,
+        epoch: global_state.current_epoch.checked_sub(1).unwrap(),
+        launch_time: launch_config.launch_timestamp,
+    });
+    
+    Ok(())
+}</code></pre>
+
+<h3>Influencer Verification & Claim (3-Month Window)</h3>
+<pre><code>pub fn influencer_claim_allocation(
+    ctx: Context&lt;InfluencerClaim&gt;,
+    verification_proof: Vec&lt;u8&gt;,
+) -&gt; Result&lt;()&gt; {
+    let launch_config = &amp;ctx.accounts.launch_config;
+    require!(
+        Clock::get()?.unix_timestamp &lt;= launch_config.verification_deadline,
+        ErrorCode::VerificationPeriodExpired
+    );
+    
+    // Verify social media proof (integrate with oracle)
+    verify_social_media_ownership(ctx, verification_proof)?;
+    
+    let influencer_allocation = TOTAL_TOKEN_SUPPLY
+        .checked_mul(30)
+        .unwrap()
+        .checked_div(100)
+        .unwrap();
+    
+    // Transfer tokens to verified influencer
+    transfer_tokens_to_influencer(ctx, influencer_allocation)?;
+    
+    emit!(InfluencerClaimEvent {
+        influencer: ctx.accounts.influencer_vault.key(),
+        amount: influencer_allocation,
+        claim_time: Clock::get()?.unix_timestamp,
+    });
+    
+    Ok(())
+}</code></pre>
+
+<h3>Developer Vesting & Unclaimed Token Redistribution</h3>
+<pre><code>/// Vests 10% of tokens to developers with linear vesting
+pub fn vest_tokens_to_developers(
+    ctx: Context&lt;VestTokensToDevelopers&gt;,
+) -&gt; Result&lt;()&gt; {
+    let developer_allocation = TOTAL_TOKEN_SUPPLY
+        .checked_mul(10)
+        .unwrap()
+        .checked_div(100)
+        .unwrap();
+    
+    let developer_vesting = &amp;mut ctx.accounts.developer_vesting;
+    developer_vesting.total_allocation = developer_allocation;
+    developer_vesting.vesting_schedule = LinearVesting::new(
+        developer_allocation,
+        Clock::get()?.unix_timestamp,
+        3 * 365 * 24 * 60 * 60, // 3 years in seconds
+    );
+    
+    emit!(DeveloperVestingEvent {
+        amount: developer_allocation,
+        start_time: Clock::get()?.unix_timestamp,
+        vesting_duration: 3 * 365 * 24 * 60 * 60,
+    });
+    
+    Ok(())
+}
+
+/// Handles redistribution of unclaimed tokens (30%) to she.is.treasury or stakers
+pub fn transfer_unclaimed_tokens_to_treasury_or_stakers(
+    ctx: Context&lt;TransferUnclaimedTokens&gt;,
+    unclaimed_allocation: u64,
+) -&gt; Result&lt;()&gt; {
+    // First attempt to transfer to she.is.treasury
+    match transfer_tokens_to_sheisdao_treasury(ctx, unclaimed_allocation) {
+        Ok(_) =&gt; {
+            emit!(UnclaimedAllocationEvent {
+                influencer: ctx.accounts.influencer_vault.key(),
+                amount: unclaimed_allocation,
+                transferred_to: ctx.accounts.sheisdao_treasury.key(),
+                allocation_type: "SheisDAO Treasury".to_string(),
+            });
+        },
+        Err(_) =&gt; {
+            // If she.is.treasury doesn't claim, redistribute to stakers
+            redistribute_to_existing_stakers(ctx, unclaimed_allocation)?;
+            
+            emit!(UnclaimedAllocationEvent {
+                influencer: ctx.accounts.influencer_vault.key(),
+                amount: unclaimed_allocation,
+                transferred_to: Pubkey::default(), // Distributed among stakers
+                allocation_type: "Redistributed to Stakers".to_string(),
+            });
+        }
+    }
+    
+    Ok(())
+}</code></pre>
+
+<hr>
+
+<h2 id="security-framework">Security Framework</h2>
+
+<h3>Multi-Signature Architecture</h3>
+
+<h4>1. Platform Authority (3-of-5 Multisig)</h4>
+<pre><code>pub struct PlatformAuthority {
+    pub signers: [Pubkey; 5],           // Core team members
+    pub threshold: u8,                  // Requires 3 signatures
+    pub nonce: u64,                     // Replay protection
+    pub permissions: PlatformPermissions,
+}
+
+pub struct PlatformPermissions {
+    pub can_pause_protocol: bool,
+    pub can_update_fees: bool,
+    pub can_moderate_content: bool,
+    pub can_emergency_refund: bool,
+    pub can_update_parameters: bool,
+}</code></pre>
+
+<h4>2. Treasury Authority (4-of-7 Multisig)</h4>
+<pre><code>pub struct TreasuryAuthority {
+    pub signers: [Pubkey; 7],           // Treasury committee
+    pub threshold: u8,                  // Requires 4 signatures
+    pub withdrawal_limits: WithdrawalLimits,
+    pub spending_categories: Vec&lt;SpendingCategory&gt;,
+}
+
+pub struct WithdrawalLimits {
+    pub daily_limit: u64,               // Maximum SOL per day
+    pub transaction_limit: u64,         // Maximum per transaction
+    pub requires_timelock: bool,        // 48-hour timelock for large withdrawals
+}</code></pre>
+
+<h4>3. Developer Upgrade Authority (2-of-3 Multisig)</h4>
+<pre><code>pub struct UpgradeAuthority {
+    pub signers: [Pubkey; 3],           // Lead developers
+    pub threshold: u8,                  // Requires 2 signatures
+    pub upgrade_timelock: i64,          // 7-day timelock for upgrades
+    pub emergency_upgrade: bool,        // Can skip timelock for critical bugs
+}</code></pre>
+
+<hr>
+
+<h2 id="governance--emergency-controls">Governance & Emergency Controls</h2>
+
+<h3>Content Moderation System</h3>
+<pre><code>pub fn flag_inappropriate_content(
+    ctx: Context&lt;FlagContent&gt;,
+    influencer_vault: Pubkey,
+    reason: String,
+) -&gt; Result&lt;()&gt; {
+    verify_platform_authority(&amp;ctx)?;
+    
+    let vault = &amp;mut ctx.accounts.influencer_vault;
+    vault.content_flag = ContentFlag::Flagged;
+    
+    // Pause new staking on this influencer
+    vault.launch_status = LaunchStatus::Failed;
+    
+    emit!(ContentFlaggedEvent {
+        influencer: influencer_vault,
+        reason,
+        flagged_by: ctx.accounts.authority.key(),
+        timestamp: Clock::get()?.unix_timestamp,
+    });
+    
+    Ok(())
+}</code></pre>
+
+<h3>Emergency Refund Mechanism</h3>
+<pre><code>pub fn emergency_refund_all_stakers(
+    ctx: Context&lt;EmergencyRefund&gt;,
+    influencer_vault: Pubkey,
+) -&gt; Result&lt;()&gt; {
+    verify_platform_authority(&amp;ctx)?;
+    
+    let vault = &amp;ctx.accounts.influencer_vault;
+    require!(
+        vault.content_flag == ContentFlag::Banned,
+        ErrorCode::NotBannedInfluencer
+    );
+    
+    // Mark global emergency mode for this influencer
+    let emergency_state = &amp;mut ctx.accounts.emergency_state;
+    emergency_state.active = true;
+    emergency_state.influencer_vault = influencer_vault;
+    emergency_state.refund_initiated = Clock::get()?.unix_timestamp;
+    
+    emit!(EmergencyRefundInitiated {
+        influencer: influencer_vault,
+        total_staked: vault.total_staked,
+        staker_count: vault.unique_stakers,
+    });
+    
+    Ok(())
+}</code></pre>
+
+<hr>
+
+<h2 id="technical-implementation">Technical Implementation</h2>
+
+<h3>Automated Ranking Algorithm</h3>
+<pre><code>pub fn calculate_influencer_rankings(
+    ctx: Context&lt;CalculateRankings&gt;,
+) -&gt; Result&lt;()&gt; {
+    let global_state = &amp;ctx.accounts.global_state;
+    
+    // This function is called via cron job every 2 weeks
+    require!(
+        Clock::get()?.unix_timestamp &gt;= global_state.epoch_start_time + EPOCH_DURATION,
+        ErrorCode::EpochNotComplete
+    );
+    
+    let mut rankings: Vec&lt;(Pubkey, f64)&gt; = Vec::new();
+    
+    // Iterate through all active influencer vaults
+    for vault in ctx.remaining_accounts.iter() {
+        let vault_data = InfluencerVault::try_deserialize(&amp;mut vault.data.borrow().as_ref())?;
+        
+        if vault_data.launch_status == LaunchStatus::Competing && 
+           vault_data.content_flag == ContentFlag::Clean {
+            
+            let score = calculate_ranking_score(&amp;vault_data)?;
+            rankings.push((vault.key(), score));
+        }
+    }
+    
+    // Sort by score descending
+    rankings.sort_by(|a, b| b.1.partial_cmp(&amp;a.1).unwrap());
+    
+    // Top influencer wins if they have minimum stake threshold
+    if let Some((winner, score)) = rankings.first() {
+        if score &gt;= &amp;MIN_LAUNCH_SCORE {
+            // Trigger token launch for winner
+            trigger_token_launch(ctx, *winner)?;
+        }
+    }
+    
+    Ok(())
+}
+
+fn calculate_ranking_score(vault: &amp;InfluencerVault) -&gt; Result&lt;f64&gt; {
+    let base_score = vault.total_staked as f64;
+    let staker_bonus = (vault.unique_stakers as f64) * STAKER_COUNT_MULTIPLIER;
+    let time_bonus = calculate_time_bonus(vault.creation_epoch)?;
+    
+    Ok(base_score + staker_bonus + time_bonus)
+}</code></pre>
+
+<h3>DEX Integration for Liquidity Provision</h3>
+<pre><code>pub fn provide_initial_liquidity(
+    ctx: Context&lt;ProvideLiquidity&gt;,
+    token_mint: Pubkey,
+) -&gt; Result&lt;()&gt; {
+    let liquidity_allocation = TOTAL_TOKEN_SUPPLY
+        .checked_mul(30)
+        .unwrap()
+        .checked_div(100)
+        .unwrap();
+    
+    // Split across multiple DEXs for optimal liquidity
+    let raydium_allocation = liquidity_allocation.checked_mul(70).unwrap().checked_div(100).unwrap();
+    let orca_allocation = liquidity_allocation.checked_mul(20).unwrap().checked_div(100).unwrap();
+    let jupiter_allocation = liquidity_allocation.checked_mul(10).unwrap().checked_div(100).unwrap();
+    
+    // Create liquidity pools
+    create_raydium_pool(ctx, token_mint, raydium_allocation)?;
+    create_orca_whirlpool(ctx, token_mint, orca_allocation)?;
+    provide_jupiter_liquidity(ctx, token_mint, jupiter_allocation)?;
+    
+    Ok(())
+}</code></pre>
+
+<hr>
+
+<h2 id="economic-model">Economic Model</h2>
+
+<h3>Fee Structure & Revenue Projections</h3>
+
+<h4>Platform Fees</h4>
+<ul>
+    <li><strong>Pre-Launch Staking Fee</strong>: 1%</li>
+    <li><strong>Pre-Launch Unstaking Fee</strong>: 1%</li>
+    <li><strong>Post-Launch Unstaking Fee</strong>: 2%</li>
+    <li><strong>No fees during emergency refunds</strong></li>
+</ul>
+
+<h4>Revenue Distribution</h4>
+<pre><code>pub struct RevenueDistribution {
+    pub platform_operations: u16,      // 60% - 6000 basis points
+    pub development_fund: u16,          // 25% - 2500 basis points  
+    pub sheisdao_revenue_share: u16,    // 15% - 1500 basis points
+}</code></pre>
+
+<h4>Economic Projections (Monthly)</h4>
+<p>Based on 10,000 active stakers with average stake of 5 SOL:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Revenue Stream</th>
+            <th>Volume</th>
+            <th>Fee Rate</th>
+            <th>Monthly Revenue (SOL)</th>
+            <th>USD Value ($150/SOL)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>New Stakes</td>
+            <td>2,000 stakes × 5 SOL</td>
+            <td>1%</td>
+            <td>100 SOL</td>
+            <td>$15,000</td>
+        </tr>
+        <tr>
+            <td>Pre-Launch Unstaking</td>
+            <td>500 unstakes × 5 SOL</td>
+            <td>1%</td>
+            <td>25 SOL</td>
+            <td>$3,750</td>
+        </tr>
+        <tr>
+            <td>Post-Launch Unstaking</td>
+            <td>200 unstakes × 5 SOL</td>
+            <td>2%</td>
+            <td>20 SOL</td>
+            <td>$3,000</td>
+        </tr>
+        <tr style="font-weight: bold;">
+            <td><strong>Total Monthly Revenue</strong></td>
+            <td></td>
+            <td></td>
+            <td><strong>145 SOL</strong></td>
+            <td><strong>$21,750</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2 id="risk-assessment--mitigation">Risk Assessment & Mitigation</h2>
+
+<h3>Smart Contract Risks</h3>
+
+<h4>1. Upgrade Risk</h4>
+<ul>
+    <li><strong>Mitigation</strong>: 7-day timelock on all upgrades</li>
+    <li><strong>Emergency Override</strong>: 2-of-3 developer multisig for critical security patches</li>
+    <li><strong>Audit Requirement</strong>: All upgrades require external security audit</li>
+</ul>
+
+<h4>2. Oracle Risk</h4>
+<ul>
+    <li><strong>Mitigation</strong>: Multiple oracle providers with consensus mechanism</li>
+    <li><strong>Fallback</strong>: Manual verification process for disputed cases</li>
+    <li><strong>Incentives</strong>: Oracle slashing for malicious behavior</li>
+</ul>
+
+<h4>3. Economic Attacks</h4>
+<ul>
+    <li><strong>Mitigation</strong>: Minimum stake thresholds and maximum position limits</li>
+    <li><strong>Monitoring</strong>: Real-time anomaly detection for unusual staking patterns</li>
+    <li><strong>Circuit Breakers</strong>: Automatic pause triggers for extreme market conditions</li>
+</ul>
+
+<h3>Operational Risks</h3>
+
+<h4>1. Content Moderation</h4>
+<ul>
+    <li><strong>Risk</strong>: Inappropriate or illegal content associated with influencers</li>
+    <li><strong>Mitigation</strong>:
+        <ul>
+            <li>Proactive content screening</li>
+            <li>Community reporting system</li>
+            <li>Rapid response team for emergencies</li>
+            <li>Emergency refund mechanism</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>2. Regulatory Compliance</h4>
+<ul>
+    <li><strong>Risk</strong>: Securities regulations and financial services laws</li>
+    <li><strong>Mitigation</strong>:
+        <ul>
+            <li>Legal review of token structures</li>
+            <li>Geographic restrictions where necessary</li>
+            <li>Compliance monitoring and reporting</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>3. Market Liquidity</h4>
+<ul>
+    <li><strong>Risk</strong>: Insufficient liquidity for launched tokens</li>
+    <li><strong>Mitigation</strong>:
+        <ul>
+            <li>Multi-DEX distribution strategy</li>
+            <li>Market maker partnerships</li>
+            <li>Minimum liquidity requirements</li>
+        </ul>
+    </li>
+</ul>
+
+<h3>Financial Risks</h3>
+
+<h4>1. SOL Price Volatility</h4>
+<ul>
+    <li><strong>Impact</strong>: Affects staking incentives and platform revenue</li>
+    <li><strong>Mitigation</strong>:
+        <ul>
+            <li>USD-pegged fee calculations</li>
+            <li>Dynamic fee adjustments</li>
+            <li>Treasury diversification</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>2. Platform Sustainability</h4>
+<ul>
+    <li><strong>Risk</strong>: Insufficient revenue to cover operational costs</li>
+    <li><strong>Mitigation</strong>:
+        <ul>
+            <li>Conservative fee structure</li>
+            <li>Multiple revenue streams</li>
+            <li>Operational efficiency optimization</li>
+        </ul>
+    </li>
+</ul>
+
+<hr>
+
+<h2>Conclusion</h2>
+
+<p>The Kapikol SocialFi Protocol architecture represents a sophisticated balance of user experience, security, and economic sustainability. The multi-layered security framework with emergency controls ensures platform integrity while enabling innovative social finance mechanisms.</p>
+
+<h3>Key architectural strengths:</h3>
+<ul>
+    <li><strong>Robust Security</strong>: Triple-layer multisig with emergency controls</li>
+    <li><strong>Economic Sustainability</strong>: Multiple revenue streams with fair fee structure</li>
+    <li><strong>User Protection</strong>: Emergency refund mechanisms and content moderation</li>
+    <li><strong>Technical Innovation</strong>: Automated ranking and token launch systems</li>
+    <li><strong>Community Impact</strong>: Integration with Sheis-DAO for women creator support</li>
+</ul>
+
+<p>This architecture is designed for long-term growth and adaptation, with built-in governance mechanisms to evolve with the Solana ecosystem and regulatory landscape.</p>
+
+<hr>
+
+<p><em>Document Version: 2.0</em><br>
+<em>Last Updated: August 2024</em><br>
+<em>Architecture Review Status: Pending Security Audit</em></p>
+
+</body>
+</html>
