@@ -27,10 +27,20 @@ pub const MAX_STAKE_AMOUNT: u64 = 100_000_000_000; // 100 SOL (in lamports)
 pub const MIN_LAUNCH_SCORE: u64 = 1_000_000_000; // 1 SOL minimum staked to launch
 pub const TOTAL_TOKEN_SUPPLY: u64 = 1_000_000_000; // 1 billion tokens
 
-// Time constants (configurable for testing)
-pub const DEFAULT_EPOCH_DURATION: i64 = 14 * 24 * 60 * 60; // 2 weeks in seconds
-pub const VERIFICATION_PERIOD: i64 = 90 * 24 * 60 * 60; // 3 months in seconds
-pub const VESTING_DURATION: i64 = 3 * 365 * 24 * 60 * 60; // 3 years in seconds
+// Time constants (configurable for testing in testnet)
+// pub const DEFAULT_EPOCH_DURATION: i64 = 14 * 24 * 60 * 60; // 2 weeks in seconds
+// pub const VERIFICATION_PERIOD: i64 = 90 * 24 * 60 * 60; // 3 months in seconds
+// pub const VESTING_DURATION: i64 = 3 * 365 * 24 * 60 * 60; // 3 years in seconds
+
+// Time constants (configurable for live solana devnet)
+// pub const DEFAULT_EPOCH_DURATION: i64 = 2 * 60; // 2 minutes
+// pub const VERIFICATION_PERIOD: i64 = 30 * 60; // 30 minutes
+// pub const VESTING_DURATION: i64 = 180 * 60; // 3 hours
+
+// Time constants (configurable for localnet testing)
+pub const DEFAULT_EPOCH_DURATION: i64 = 2 * 60; // 2 minutes
+pub const VERIFICATION_PERIOD: i64 = 30 * 60; // 30 minutes
+pub const VESTING_DURATION: i64 = 180 * 60; // 3 hours
 
 // Ranking algorithm multipliers
 pub const STAKER_COUNT_MULTIPLIER: f64 = 10_000.0; // Bonus per unique staker
