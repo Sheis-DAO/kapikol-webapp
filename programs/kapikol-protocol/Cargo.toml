@@ -1,0 +1,30 @@
+[package]
+name = "kapikol-protocol"
+version = "0.1.0"
+description = "Kapikol SocialFi Protocol - Solana Program"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "kapikol_protocol"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+anchor-debug = ["anchor-lang/anchor-debug", "anchor-spl/anchor-debug"]
+
+[dependencies]
+anchor-lang = "0.29.0"
+anchor-spl = "0.29.0"
+bytemuck = "1.4"
+mpl-token-metadata = "1.13"
+solana-program = "~1.16"
+spl-token = "3.5.0"
+switchboard-v2 = "0.4"
+
+[dev-dependencies]
+solana-program-test = "~1.16"
+tokio = "1.0"

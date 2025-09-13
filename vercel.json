@@ -1,0 +1,10 @@
+{
+  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "npm run build",
+  "rewrites": [
+    {
+      "source": "/((?!assets|kapikol-favicon\\.svg).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

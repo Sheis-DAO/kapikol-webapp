@@ -1,0 +1,26 @@
+[toolchain]
+
+[features]
+seeds = false
+skip-lint = false
+resolution = true
+allow-missing-optionals = false
+
+[programs.localnet]
+kapikol_protocol = "KAPikoLaunchStakingProgram11111111111111111"
+
+[programs.devnet]
+kapikol_protocol = "KAPikoLaunchStakingProgram11111111111111111"
+
+[programs.mainnet]
+kapikol_protocol = "KAPikoLaunchStakingProgram11111111111111111"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

@@ -1,0 +1,15 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    "typeRoots": ["./node_modules/@types", "./target/types"],
+    "types": ["mocha", "chai", "node"]
+  },
+  "include": [
+    "tests/**/*",
+    "target/types/**/*"
+  ]
+}
