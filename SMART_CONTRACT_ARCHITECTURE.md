@@ -16,12 +16,13 @@
 
 ## Executive Summary
 
-The Kapikol SocialFi Protocol is a Solana-based decentralized platform enabling community-driven staking on social media influencers with automated token launches for top-ranked creators. This architecture implements a sophisticated multi-signature security model, emergency governance controls, and sustainable tokenomics designed for long-term ecosystem growth.
+The Kapikol SocialFi Protocol is a Solana-based decentralized platform enabling community-driven token purchases for social media influencers with automated token launches for top-ranked creators. This architecture implements a sophisticated multi-signature security model, emergency governance controls, and sustainable tokenomics designed for long-term ecosystem growth.
 
 ### Key Features
-- **Indefinite Staking**: Stakes remain active until manual withdrawal or token launch
+- **Direct Token Purchase**: SOL stakes are used to purchase token allocations at launch
 - **Automated Rankings**: On-chain ranking system with 2-week epoch cycles
-- **Dual Withdrawal System**: Pre-launch (1% fee) and post-launch (2% fee) unstaking
+- **SOL Return System**: Remaining SOL after token purchase returned to users
+- **Dynamic Liquidity Provision**: Portion of remaining SOL used for DEX liquidity
 - **Multi-Signature Security**: Triple-layer security with platform, treasury, and developer controls
 - **Emergency Governance**: Content moderation and forced refund capabilities
 - **Community Fund Integration**: Unclaimed allocations benefit women creators through Sheis-DAO
@@ -36,18 +37,20 @@ The Kapikol SocialFi Protocol is a Solana-based decentralized platform enabling 
 graph TD
     A[User Stakes SOL on Influencer] --> B{Pre-Launch Staking}
     B --> C[1% Platform Fee]
-    B --> D[Indefinite Staking Period]
+    B --> D[Staking Period - 2 Week Epochs]
     D --> E[Bi-weekly Ranking Calculation]
     E --> F{Top Influencer?}
     F -->|Yes| G[Automated Token Launch]
     F -->|No| D
-    G --> H[Token Distribution Begins]
-    H --> I[3-Year Linear Vesting]
-    D --> J[User Unstakes - 1% Fee]
-    I --> K[User Unstakes - 2% Fee]
-    G --> L{Influencer Verification}
-    L -->|Verified within 3 months| M[30% to Influencer]
-    L -->|Not verified| N[30% to Sheis-DAO Treasury/Stakers]
+    G --> H[SOL Used for Token Purchase]
+    H --> I[Calculate Token Allocation vs SOL Price]
+    I --> J[Purchase User's Token Allocation]
+    J --> K[Return Remaining SOL to Users]
+    J --> L[Use Portion for DEX Liquidity]
+    D --> M[User Withdraws Early - 1% Fee + SOL Return]
+    G --> N{Influencer Verification}
+    N -->|Verified within 3 months| O[30% to Influencer]
+    N -->|Not verified| P[30% to Sheis-DAO Treasury]
 ```
 
 ### Epoch System
@@ -93,7 +96,7 @@ pub struct InfluencerVault {
     pub launch_status: LaunchStatus,
 }
 
-// Individual stake position
+// Individual stake position for token purchase
 pub struct StakePosition {
     pub staker: Pubkey,
     pub influencer_vault: Pubkey,
@@ -102,6 +105,10 @@ pub struct StakePosition {
     pub stake_timestamp: i64,
     pub epoch_staked: u64,
     pub position_status: PositionStatus,
+    pub token_allocation: u64,          // Tokens to be purchased at launch
+    pub sol_for_purchase: u64,          // SOL reserved for token purchase
+    pub sol_for_liquidity: u64,         // SOL portion for liquidity provision
+    pub remaining_sol: u64,             // SOL to be returned to user
 }
 ```
 
@@ -115,18 +122,19 @@ pub struct TokenLaunchConfig {
     pub launch_timestamp: i64,
     pub verification_deadline: i64,     // 3 months from launch
     pub distribution_complete: bool,
+    pub initial_token_price: u64,       // Token price in SOL (with decimals)
+    pub total_sol_for_purchases: u64,   // Total SOL used for token purchases
+    pub total_sol_for_liquidity: u64,   // Total SOL used for liquidity
+    pub total_sol_returned: u64,        // Total SOL returned to users
 }
 
-// Vesting schedule for stakers
-pub struct VestingSchedule {
+// Token allocation for direct purchase (no vesting needed)
+pub struct TokenAllocation {
     pub beneficiary: Pubkey,
-    pub total_allocation: u64,          // 30% of tokens proportional to stake
-    pub daily_release_amount: u64,      // Linear over 3 years
-    pub claimed_amount: u64,
-    pub sol_vesting_amount: u64,        // SOL to be returned over 3 years
-    pub sol_claimed: u64,
-    pub start_time: i64,
-    pub last_claim_time: i64,
+    pub purchased_tokens: u64,          // Tokens purchased directly with SOL
+    pub purchase_price_per_token: u64,  // Price paid per token
+    pub purchase_timestamp: i64,        // When tokens were purchased
+    pub claimed: bool,                  // Whether tokens have been claimed
 }
 
 // Linear vesting utility structure
@@ -184,10 +192,10 @@ pub enum VerificationStatus {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
 pub enum PositionStatus {
     Active,              // Normal staking state
-    PreLaunchUnstaking,  // Initiated unstaking before launch
-    PostLaunch,          // Token launched, entering vesting
-    PostLaunchUnstaking, // Initiated unstaking after launch
-    Completed,           // Fully withdrawn
+    PreLaunchWithdraw,   // Withdrew before launch (SOL returned)
+    TokensPurchased,     // Tokens purchased at launch
+    TokensClaimed,       // Tokens claimed by user
+    Completed,           // Fully settled
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
@@ -209,9 +217,9 @@ pub enum LaunchStatus {
 
 ---
 
-## Staking & Unstaking Mechanisms
+## Staking & Token Purchase Mechanisms
 
-### Pre-Launch Staking
+### Pre-Launch Staking for Token Allocation
 ```rust
 pub fn stake_on_influencer(
     ctx: Context<StakeOnInfluencer>,
@@ -232,7 +240,7 @@ pub fn stake_on_influencer(
     // Transfer fee to platform treasury
     transfer_to_platform_treasury(ctx, platform_fee)?;
     
-    // Create or update stake position
+    // Create or update stake position for token purchase
     let stake_position = &mut ctx.accounts.stake_position;
     stake_position.staker = ctx.accounts.staker.key();
     stake_position.gross_amount = amount;
@@ -240,6 +248,11 @@ pub fn stake_on_influencer(
     stake_position.stake_timestamp = Clock::get()?.unix_timestamp;
     stake_position.epoch_staked = ctx.accounts.global_state.current_epoch;
     stake_position.position_status = PositionStatus::Active;
+    
+    // Reserve SOL for future token purchase (proportional allocation)
+    stake_position.sol_for_purchase = net_stake; // Will be recalculated at launch based on token price
+    stake_position.sol_for_liquidity = 0; // Calculated at launch
+    stake_position.remaining_sol = 0; // Calculated at launch
     
     // Update influencer vault
     let influencer_vault = &mut ctx.accounts.influencer_vault;
@@ -265,15 +278,15 @@ pub fn stake_on_influencer(
 }
 ```
 
-### Pre-Launch Unstaking (1% Fee)
+### Pre-Launch Withdrawal (1% Fee + Full SOL Return)
 ```rust
-pub fn unstake_pre_launch(
-    ctx: Context<UnstakePreLaunch>,
+pub fn withdraw_pre_launch(
+    ctx: Context<WithdrawPreLaunch>,
 ) -> Result<()> {
     require!(!ctx.accounts.global_state.emergency_mode, ErrorCode::EmergencyModeActive);
     require!(
         ctx.accounts.influencer_vault.launch_status == LaunchStatus::Competing,
-        ErrorCode::InvalidUnstakeState
+        ErrorCode::InvalidWithdrawState
     );
     
     let stake_position = &mut ctx.accounts.stake_position;
@@ -282,25 +295,25 @@ pub fn unstake_pre_launch(
         ErrorCode::InvalidPositionStatus
     );
     
-    // Calculate 1% unstaking fee
-    let unstaking_fee = stake_position.net_amount
+    // Calculate 1% withdrawal fee
+    let withdrawal_fee = stake_position.net_amount
         .checked_mul(100)
         .unwrap()
         .checked_div(10000)
         .unwrap();
     
     let return_amount = stake_position.net_amount
-        .checked_sub(unstaking_fee)
+        .checked_sub(withdrawal_fee)
         .unwrap();
     
     // Transfer fee to platform treasury
-    transfer_to_platform_treasury(ctx, unstaking_fee)?;
+    transfer_to_platform_treasury(ctx, withdrawal_fee)?;
     
-    // Return SOL to staker
+    // Return SOL to staker's original wallet
     transfer_sol_to_staker(ctx, return_amount)?;
     
     // Update position status
-    stake_position.position_status = PositionStatus::Completed;
+    stake_position.position_status = PositionStatus::PreLaunchWithdraw;
     
     // Update influencer vault
     let influencer_vault = &mut ctx.accounts.influencer_vault;
@@ -308,57 +321,56 @@ pub fn unstake_pre_launch(
         .checked_sub(stake_position.net_amount)
         .unwrap();
     
-    emit!(UnstakingEvent {
+    emit!(WithdrawEvent {
         staker: ctx.accounts.staker.key(),
         amount_returned: return_amount,
-        fee: unstaking_fee,
-        unstake_type: UnstakeType::PreLaunch,
+        fee: withdrawal_fee,
+        withdraw_type: WithdrawType::PreLaunch,
     });
     
     Ok(())
 }
 ```
 
-### Post-Launch Unstaking (2% Fee)
+### Post-Launch Token Claiming (No Additional Fees)
 ```rust
-pub fn unstake_post_launch(
-    ctx: Context<UnstakePostLaunch>,
+pub fn claim_purchased_tokens(
+    ctx: Context<ClaimPurchasedTokens>,
 ) -> Result<()> {
     require!(!ctx.accounts.global_state.emergency_mode, ErrorCode::EmergencyModeActive);
     
-    let vesting_schedule = &mut ctx.accounts.vesting_schedule;
+    let token_allocation = &mut ctx.accounts.token_allocation;
     require!(
-        vesting_schedule.sol_vesting_amount > vesting_schedule.sol_claimed,
-        ErrorCode::NoSOLToUnstake
+        !token_allocation.claimed,
+        ErrorCode::TokensAlreadyClaimed
     );
     
-    let remaining_sol = vesting_schedule.sol_vesting_amount
-        .checked_sub(vesting_schedule.sol_claimed)
-        .unwrap();
+    let stake_position = &ctx.accounts.stake_position;
+    require!(
+        stake_position.position_status == PositionStatus::TokensPurchased,
+        ErrorCode::TokensNotPurchasedYet
+    );
     
-    // Calculate 2% unstaking fee on remaining amount
-    let unstaking_fee = remaining_sol
-        .checked_mul(200)
-        .unwrap()
-        .checked_div(10000)
-        .unwrap();
+    // Transfer purchased tokens to user (no additional fees)
+    transfer_tokens_to_user(ctx, token_allocation.purchased_tokens)?;
     
-    let return_amount = remaining_sol.checked_sub(unstaking_fee).unwrap();
+    // Return any remaining SOL that wasn't used for purchase or liquidity
+    if stake_position.remaining_sol > 0 {
+        transfer_sol_to_staker(ctx, stake_position.remaining_sol)?;
+    }
     
-    // Transfer fee to platform treasury
-    transfer_to_platform_treasury(ctx, unstaking_fee)?;
+    // Update allocation status
+    token_allocation.claimed = true;
     
-    // Return remaining SOL to staker
-    transfer_sol_to_staker(ctx, return_amount)?;
+    // Update position status
+    let stake_position = &mut ctx.accounts.stake_position;
+    stake_position.position_status = PositionStatus::TokensClaimed;
     
-    // Mark SOL as fully claimed (token vesting continues unaffected)
-    vesting_schedule.sol_claimed = vesting_schedule.sol_vesting_amount;
-    
-    emit!(UnstakingEvent {
+    emit!(TokenClaimEvent {
         staker: ctx.accounts.staker.key(),
-        amount_returned: return_amount,
-        fee: unstaking_fee,
-        unstake_type: UnstakeType::PostLaunch,
+        tokens_received: token_allocation.purchased_tokens,
+        sol_returned: stake_position.remaining_sol,
+        claim_timestamp: Clock::get()?.unix_timestamp,
     });
     
     Ok(())
@@ -369,10 +381,11 @@ pub fn unstake_post_launch(
 
 ## Token Launch & Distribution
 
-### Automated Token Launch Process
+### Automated Token Launch & Purchase Process
 ```rust
 pub fn execute_token_launch(
     ctx: Context<ExecuteTokenLaunch>,
+    initial_token_price: u64, // Price per token in SOL (with decimals)
 ) -> Result<()> {
     let global_state = &mut ctx.accounts.global_state;
     let influencer_vault = &mut ctx.accounts.influencer_vault;
@@ -398,15 +411,20 @@ pub fn execute_token_launch(
     launch_config.total_supply = TOTAL_TOKEN_SUPPLY;
     launch_config.launch_timestamp = Clock::get()?.unix_timestamp;
     launch_config.verification_deadline = Clock::get()?.unix_timestamp + (90 * 24 * 60 * 60); // 3 months
+    launch_config.initial_token_price = initial_token_price;
     
     // Update influencer vault status
     influencer_vault.launch_status = LaunchStatus::Launched;
     
-    // Distribute tokens
-    distribute_tokens_to_stakers(ctx)?;      // 30% linear vesting
+    // Process token purchases for all stakers
+    process_staker_token_purchases(ctx, initial_token_price)?;
+    
+    // Distribute token allocations
     hold_tokens_for_influencer(ctx)?;        // 30% pending verification
-    provide_liquidity_to_dex(ctx)?;          // 30% market making
     vest_tokens_to_developers(ctx)?;         // 10% to developers (linear vesting)
+    
+    // Use remaining SOL for liquidity provision (calculated from all purchases)
+    provide_liquidity_with_remaining_sol(ctx)?; // Dynamic amount based on purchase calculations
     
     // Start new epoch
     global_state.current_epoch = global_state.current_epoch.checked_add(1).unwrap();
@@ -417,6 +435,7 @@ pub fn execute_token_launch(
         token_mint: token_mint,
         epoch: global_state.current_epoch.checked_sub(1).unwrap(),
         launch_time: launch_config.launch_timestamp,
+        token_price: initial_token_price,
     });
     
     Ok(())
@@ -478,6 +497,95 @@ pub fn process_expired_verification(
         influencer: ctx.accounts.influencer_vault.key(),
         amount: unclaimed_allocation,
         transferred_to: ctx.accounts.sheisdao_treasury.key(),
+    });
+    
+    Ok(())
+}
+
+/// Process token purchases for all stakers based on their SOL stakes
+pub fn process_staker_token_purchases(
+    ctx: Context<ProcessTokenPurchases>,
+    token_price: u64,
+) -> Result<()> {
+    let launch_config = &mut ctx.accounts.launch_config;
+    let influencer_vault = &ctx.accounts.influencer_vault;
+    
+    let staker_allocation_percentage = 60; // 60% of tokens available for purchase
+    let total_tokens_for_purchase = TOTAL_TOKEN_SUPPLY
+        .checked_mul(staker_allocation_percentage)
+        .unwrap()
+        .checked_div(100)
+        .unwrap();
+    
+    let mut total_sol_used_for_purchases = 0u64;
+    let mut total_sol_for_liquidity = 0u64;
+    let mut total_sol_returned = 0u64;
+    
+    // Iterate through all stake positions for this influencer
+    for stake_account in ctx.remaining_accounts.iter() {
+        let mut stake_position = StakePosition::try_deserialize(&mut stake_account.data.borrow_mut().as_ref())?;
+        
+        if stake_position.position_status == PositionStatus::Active {
+            // Calculate proportional token allocation
+            let stake_percentage = stake_position.net_amount
+                .checked_mul(10000)
+                .unwrap()
+                .checked_div(influencer_vault.total_staked)
+                .unwrap();
+                
+            let token_allocation = total_tokens_for_purchase
+                .checked_mul(stake_percentage as u64)
+                .unwrap()
+                .checked_div(10000)
+                .unwrap();
+            
+            // Calculate SOL needed to purchase allocated tokens
+            let sol_needed_for_tokens = token_allocation
+                .checked_mul(token_price)
+                .unwrap()
+                .checked_div(1_000_000_000) // Adjust for token decimals
+                .unwrap();
+            
+            let sol_for_purchase = std::cmp::min(sol_needed_for_tokens, stake_position.net_amount);
+            let actual_tokens_purchased = sol_for_purchase
+                .checked_mul(1_000_000_000)
+                .unwrap()
+                .checked_div(token_price)
+                .unwrap();
+            
+            // Calculate remaining SOL distribution
+            let remaining_sol = stake_position.net_amount.checked_sub(sol_for_purchase).unwrap();
+            let sol_for_liquidity_portion = remaining_sol.checked_mul(30).unwrap().checked_div(100).unwrap(); // 30% for liquidity
+            let sol_to_return = remaining_sol.checked_sub(sol_for_liquidity_portion).unwrap(); // Rest returned to user
+            
+            // Update stake position
+            stake_position.token_allocation = actual_tokens_purchased;
+            stake_position.sol_for_purchase = sol_for_purchase;
+            stake_position.sol_for_liquidity = sol_for_liquidity_portion;
+            stake_position.remaining_sol = sol_to_return;
+            stake_position.position_status = PositionStatus::TokensPurchased;
+            
+            // Update totals
+            total_sol_used_for_purchases = total_sol_used_for_purchases.checked_add(sol_for_purchase).unwrap();
+            total_sol_for_liquidity = total_sol_for_liquidity.checked_add(sol_for_liquidity_portion).unwrap();
+            total_sol_returned = total_sol_returned.checked_add(sol_to_return).unwrap();
+            
+            // Create token allocation record
+            create_token_allocation_record(ctx, &stake_position, actual_tokens_purchased, token_price)?;
+        }
+    }
+    
+    // Update launch config with totals
+    launch_config.total_sol_for_purchases = total_sol_used_for_purchases;
+    launch_config.total_sol_for_liquidity = total_sol_for_liquidity;
+    launch_config.total_sol_returned = total_sol_returned;
+    
+    emit!(TokenPurchaseProcessedEvent {
+        influencer: influencer_vault.key(),
+        total_sol_for_purchases: total_sol_used_for_purchases,
+        total_sol_for_liquidity: total_sol_for_liquidity,
+        total_sol_returned: total_sol_returned,
+        token_price: token_price,
     });
     
     Ok(())
@@ -839,29 +947,83 @@ pub fn verify_social_ownership(
 }
 ```
 
-### DEX Integration for Liquidity Provision
+### DEX Integration for Dynamic Liquidity Provision
 ```rust
-pub fn provide_initial_liquidity(
+pub fn provide_liquidity_with_remaining_sol(
     ctx: Context<ProvideLiquidity>,
     token_mint: Pubkey,
 ) -> Result<()> {
-    let liquidity_allocation = TOTAL_TOKEN_SUPPLY
-        .checked_mul(30)
+    let launch_config = &ctx.accounts.launch_config;
+    
+    // Use collected SOL from token purchases for liquidity
+    let sol_for_liquidity = launch_config.total_sol_for_liquidity;
+    
+    // Calculate corresponding token amount for liquidity pool
+    // Use market-making ratio to determine optimal token:SOL ratio
+    let tokens_for_liquidity = sol_for_liquidity
+        .checked_mul(1_000_000_000) // Convert to token units
+        .unwrap()
+        .checked_div(launch_config.initial_token_price)
+        .unwrap()
+        .checked_mul(120) // 1.2x tokens to SOL for initial liquidity depth
         .unwrap()
         .checked_div(100)
         .unwrap();
     
-    // Split across multiple DEXs for optimal liquidity
-    let raydium_allocation = liquidity_allocation.checked_mul(70).unwrap().checked_div(100).unwrap();
-    let orca_allocation = liquidity_allocation.checked_mul(20).unwrap().checked_div(100).unwrap();
-    let jupiter_allocation = liquidity_allocation.checked_mul(10).unwrap().checked_div(100).unwrap();
+    // Split across multiple DEXs for optimal liquidity distribution
+    let raydium_sol = sol_for_liquidity.checked_mul(60).unwrap().checked_div(100).unwrap();
+    let orca_sol = sol_for_liquidity.checked_mul(25).unwrap().checked_div(100).unwrap();
+    let jupiter_sol = sol_for_liquidity.checked_mul(15).unwrap().checked_div(100).unwrap();
     
-    // Create liquidity pools
-    create_raydium_pool(ctx, token_mint, raydium_allocation)?;
-    create_orca_whirlpool(ctx, token_mint, orca_allocation)?;
-    provide_jupiter_liquidity(ctx, token_mint, jupiter_allocation)?;
+    let raydium_tokens = tokens_for_liquidity.checked_mul(60).unwrap().checked_div(100).unwrap();
+    let orca_tokens = tokens_for_liquidity.checked_mul(25).unwrap().checked_div(100).unwrap();
+    let jupiter_tokens = tokens_for_liquidity.checked_mul(15).unwrap().checked_div(100).unwrap();
+    
+    // Create liquidity pools with collected SOL + allocated tokens
+    create_raydium_pool(ctx, token_mint, raydium_tokens, raydium_sol)?;
+    create_orca_whirlpool(ctx, token_mint, orca_tokens, orca_sol)?;
+    provide_jupiter_liquidity(ctx, token_mint, jupiter_tokens, jupiter_sol)?;
+    
+    emit!(LiquidityProvidedEvent {
+        token_mint: token_mint,
+        total_sol_used: sol_for_liquidity,
+        total_tokens_used: tokens_for_liquidity,
+        raydium_sol: raydium_sol,
+        orca_sol: orca_sol,
+        jupiter_sol: jupiter_sol,
+    });
     
     Ok(())
+}
+
+/// Calculate dynamic SOL return to users after token purchase and liquidity provision
+pub fn calculate_sol_returns(
+    ctx: Context<CalculateSOLReturns>,
+    total_staked_sol: u64,
+    token_price: u64,
+) -> Result<(u64, u64, u64)> { // (sol_for_purchases, sol_for_liquidity, sol_to_return)
+    
+    // Calculate total SOL needed for 60% token allocation
+    let staker_token_allocation = TOTAL_TOKEN_SUPPLY
+        .checked_mul(60)
+        .unwrap()
+        .checked_div(100)
+        .unwrap();
+    
+    let max_sol_for_purchases = staker_token_allocation
+        .checked_mul(token_price)
+        .unwrap()
+        .checked_div(1_000_000_000)
+        .unwrap();
+    
+    let actual_sol_for_purchases = std::cmp::min(max_sol_for_purchases, total_staked_sol);
+    let remaining_after_purchase = total_staked_sol.checked_sub(actual_sol_for_purchases).unwrap();
+    
+    // Use 30% of remaining SOL for liquidity, return the rest
+    let sol_for_liquidity = remaining_after_purchase.checked_mul(30).unwrap().checked_div(100).unwrap();
+    let sol_to_return = remaining_after_purchase.checked_sub(sol_for_liquidity).unwrap();
+    
+    Ok((actual_sol_for_purchases, sol_for_liquidity, sol_to_return))
 }
 ```
 
@@ -873,8 +1035,9 @@ pub fn provide_initial_liquidity(
 
 #### Platform Fees
 - **Pre-Launch Staking Fee**: 1%
-- **Pre-Launch Unstaking Fee**: 1%
-- **Post-Launch Unstaking Fee**: 2%
+- **Pre-Launch Withdrawal Fee**: 1% (full SOL returned minus fee)
+- **Token Purchase**: No additional fees (SOL used directly for token purchase)
+- **Liquidity Provision**: Portion of remaining SOL used for DEX liquidity
 - **No fees during emergency refunds**
 
 #### Revenue Distribution
@@ -928,9 +1091,18 @@ Based on 10,000 active stakers with average stake of 5 SOL:
 | Revenue Stream | Volume | Fee Rate | Monthly Revenue (SOL) | USD Value ($150/SOL) |
 |---|---|---|---|---|
 | New Stakes | 2,000 stakes × 5 SOL | 1% | 100 SOL | $15,000 |
-| Pre-Launch Unstaking | 500 unstakes × 5 SOL | 1% | 25 SOL | $3,750 |
-| Post-Launch Unstaking | 200 unstakes × 5 SOL | 2% | 20 SOL | $3,000 |
-| **Total Monthly Revenue** | | | **145 SOL** | **$21,750** |
+| Pre-Launch Withdrawals | 500 withdrawals × 5 SOL | 1% | 25 SOL | $3,750 |
+| Token Launch Revenue | 4 launches × 250 SOL avg total stake | Liquidity fees | 20 SOL | $3,000 |
+| DEX Trading Fees | Liquidity provision rewards | Variable | 15 SOL | $2,250 |
+| **Total Monthly Revenue** | | | **160 SOL** | **$24,000** |
+
+#### Token Purchase Economics
+- **60% of tokens**: Available for direct purchase by stakers
+- **30% of tokens**: Held for influencer verification
+- **10% of tokens**: Vested to developers
+- **SOL Usage**: Purchase allocation → Liquidity provision → Return remainder
+- **Price Discovery**: Market-driven initial token pricing
+- **Liquidity Depth**: ~30% of remaining SOL used for initial liquidity
 
 ---
 
@@ -1013,3 +1185,59 @@ This architecture is designed for long-term growth and adaptation, with built-in
 *Document Version: 2.0*  
 *Last Updated: August 2024*  
 *Architecture Review Status: Pending Security Audit*
+
+
+### Confiderations
+> In this design, how can the trading pair price be determined after the initial release?
+
+⏺ In the updated design, the trading pair price after initial release would be determined through
+  several mechanisms:
+
+  Price Discovery Mechanisms
+
+  1. Market-Driven Price Discovery
+
+  After the initial liquidity provision, the token price will be determined by:
+  - DEX Market Forces: Supply and demand on Raydium, Orca, and Jupiter pools
+  - Arbitrage: Price differences between DEXs will be balanced by arbitrageurs
+  - Trading Volume: Active trading will establish true market value
+
+  2. Initial Price Anchoring
+
+  The initial_token_price set at launch serves as the starting point:
+  // From the launch config
+  pub initial_token_price: u64,       // Price per token in SOL (with decimals)
+
+  3. Liquidity Pool Dynamics
+
+  The price evolves through:
+  - Constant Product Formula: DEX AMMs use x*y=k pricing
+  - Liquidity Depth: More liquidity = less price slippage
+  - Trading Activity: Buys increase price, sells decrease price
+
+  Price Discovery Flow
+
+  Initial Launch Price → DEX Liquidity Pools → Market Trading → Price Discovery
+       ↓                        ↓                    ↓              ↓
+  Set by platform         60% Raydium           Users trade      True market
+  & market analysis       25% Orca              tokens           value emerges
+                          15% Jupiter
+
+  Key Considerations
+
+  Price Stability Features:
+
+  - Multi-DEX Distribution: Reduces single-point price manipulation
+  - Sufficient Liquidity Depth: ~30% of remaining SOL ensures trading stability
+  - Market Maker Integration: Professional MMs can provide additional liquidity
+
+  Price Information Sources:
+
+  - On-chain Oracle Integration: Jupiter aggregator pricing
+  - Multiple DEX Feeds: Raydium + Orca + Jupiter price averaging
+  - Volume-Weighted Pricing: Consider trading volume in price calculations
+
+  The design creates a robust price discovery mechanism where the initial platform-set price
+  transitions to true market-driven pricing through decentralized trading activity across multiple
+  liquidity sources.
+
